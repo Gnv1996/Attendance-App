@@ -100,9 +100,12 @@ const AttendanceScreen = () => {
       
         // 1 → Day-wise attendance
         const dayRecords = result.data[1] || [];
+    
+
       
         const parsedAttendance = {};
         dayRecords.forEach((entry) => {
+          const isApproved = entry.IsApproved === 1;
           const day = entry.Day;
           const date = moment(
             `${selectedMonth.year()}-${selectedMonth.month() + 1}-${day}`,
@@ -117,6 +120,8 @@ const AttendanceScreen = () => {
               ...existing,
               status: entry.Holiday,
               holidayName: entry.Holiday,
+              leaveDescription: entry.LeaveDescription || "",
+              isApproved,
             };
           } else if (entry.Holiday === 'OL' || hasLeave === 'OL') {
             parsedAttendance[date] = {
@@ -138,6 +143,7 @@ const AttendanceScreen = () => {
                 inTime,
                 outTime,
                 workHours,
+                isApproved,
               };
             }
           } else if (entry.Holiday && !entry.Holiday.startsWith("Login:")) {
@@ -188,6 +194,7 @@ const AttendanceScreen = () => {
       let inTime = null;
       let outTime = null;
       let workHours = null;
+      let isApproved = false;   // ✅ important
   
       if (weekday === "Sunday") {
         status = "sunday";
@@ -195,12 +202,14 @@ const AttendanceScreen = () => {
   
       if (attendanceData[key]) {
         const item = attendanceData[key];
+  
+        isApproved = item.isApproved || false;   // ✅ approved pass ho raha
+  
         holiday = item.holidayName || "";
         leaveDescription = item.leaveDescription || "";
   
-        // 🟢 agar holiday text "Login:" se start hota hai → present treat karo
         if (holiday.startsWith("Login:")) {
-          status = "present";   // ✅ yaha fix kiya
+          status = "present";
           inTime = holiday.match(/Login:([\d: ]+[APM]+)/)?.[1]?.trim() || null;
           outTime = holiday.match(/Logout:([\d: ]+[APM]+)/)?.[1]?.trim() || null;
           const workHourMatch = holiday.match(/Work Hour:.*?([\d:]+)/);
@@ -223,11 +232,13 @@ const AttendanceScreen = () => {
         inTime,
         outTime,
         workHours,
+        isApproved,   // ✅ UI tak jaa raha
       });
     }
   
     return days;
   };
+  
   
   
   
@@ -378,26 +389,43 @@ const AttendanceScreen = () => {
         {getDaysInMonth().map((day) => {
           const config = getStatusConfig(day.status);
           const isToday = day.date.isSame(moment(), 'day');
+          let isApproved = false;
+
 
           return (
             <Animated.View
-              key={day.key}
-              style={{
-                marginHorizontal: 16,
-                marginVertical: 6,
-                padding: 16,
-                borderRadius: 16,
-                backgroundColor: config.bgColor,
-                borderColor: isToday ? config.color : config.borderColor,
-                borderWidth: isToday ? 2 : 1,
-                shadowColor: config.color,
-                shadowOpacity: 0.2,
-                shadowOffset: { width: 0, height: 4 },
-                shadowRadius: 10,
-                transform: [{ scale: fadeAnim }],
-                opacity: fadeAnim,
-              }}
-            >
+            key={day.key}
+            style={{
+              marginHorizontal: 16,
+              marginVertical: 6,
+              padding: 16,
+              borderRadius: 16,
+          
+              // ✅ Dark green background
+              backgroundColor: day.isApproved 
+                ? '#66CDAA'   // dark green
+                : config.bgColor,
+          
+              // ✅ Dark green border
+              borderColor: day.isApproved
+                ? '#166534'
+                : isToday
+                  ? config.color
+                  : config.borderColor,
+          
+              borderWidth: isToday ? 2 : 1,
+          
+              shadowColor: day.isApproved ? '#166534' : config.color,
+              shadowOpacity: 0.3,
+              shadowOffset: { width: 0, height: 4 },
+              shadowRadius: 10,
+          
+              transform: [{ scale: fadeAnim }],
+              opacity: fadeAnim,
+            }}
+          >
+          
+          
               <View style={{ alignSelf: 'flex-start', backgroundColor: config.color, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 8 }}>
                 <Text style={{ color: 'white', fontWeight: '600', fontSize: 12 }}>{config.label.toUpperCase()}</Text>
               </View>
@@ -417,6 +445,25 @@ const AttendanceScreen = () => {
                   <MaterialCommunityIcons name={config.icon} size={26} color="white" />
                 </View>
               </View>
+              {day.isApproved && day.leaveDescription ? (
+  <View style={{
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: day.isApproved ? 'rgba(255,255,255,0.15)' : '#f3f4f6'
+  }}>
+    <Text style={{
+      color: day.isApproved ? '#000' : '#065f46',
+      fontWeight: '700'
+    }}>
+      Approved :
+      <Text style={{ fontWeight: '400' }}>
+        {" "}{day.leaveDescription}
+      </Text>
+    </Text>
+  </View>
+) : null}
+
 
               {(day.inTime || day.outTime) && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
