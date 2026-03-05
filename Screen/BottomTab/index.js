@@ -1,4 +1,4 @@
-import React,{useEffect,useState,useCallback} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -21,25 +21,19 @@ import LinearGradient from 'react-native-linear-gradient';
 import DashboardScreen from '../Dashboard';
 import ProfileScreen from '../Profile';
 import AttendanceScreen from '../Attaindance';
-import { useNavigation,useFocusEffect
- } from '@react-navigation/native';
+import CompanyScreen from '../Info';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 const Drawer = createDrawerNavigator();
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
-
-
-const CustomDrawer = (props) => {
+const CustomDrawer = props => {
   const navigation = useNavigation();
   const [userData, setUserData] = useState(null);
 
-
-
   const name = userData?.name || 'Guest User';
   const email = userData?.email || 'example@email.com';
-
 
   useFocusEffect(
     useCallback(() => {
@@ -48,23 +42,22 @@ const CustomDrawer = (props) => {
           const userDataString = await AsyncStorage.getItem('userData');
           const userData = userDataString ? JSON.parse(userDataString) : null;
 
-          console.warn(userData,"see the user Data>>>>>")
-  
+          console.warn(userData, 'see the user Data>>>>>');
+
           setUserData(userData);
         } catch (error) {
           console.log('❌ Error fetching user data:', error);
         }
       };
-  
+
       fetchUserData();
-  
+
       // cleanup (optional)
       return () => {
         // screen blur hone par kuch cleanup chahiye ho to
       };
-    }, [])
+    }, []),
   );
-
 
   const menuItems = [
     {
@@ -98,7 +91,7 @@ const CustomDrawer = (props) => {
       <View style={styles.profileContainer}>
         <View style={styles.profileImageContainer}>
           <Image
-            source={{ uri: userData?.profileImage }}
+            source={{uri: userData?.profileImage}}
             style={styles.profileImage}
           />
           <View style={styles.onlineIndicator} />
@@ -122,8 +115,7 @@ const CustomDrawer = (props) => {
       <DrawerContentScrollView
         {...props}
         contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <View style={styles.menuContainer}>
           <Text style={styles.sectionHeader}>MAIN MENU</Text>
           <DrawerItemList {...props} />
@@ -136,8 +128,7 @@ const CustomDrawer = (props) => {
               key={index}
               style={styles.menuCard}
               onPress={item.onPress}
-              activeOpacity={0.7}
-            >
+              activeOpacity={0.7}>
               <View style={styles.menuIconContainer}>
                 <MaterialCommunityIcons
                   name={item.icon}
@@ -158,13 +149,12 @@ const CustomDrawer = (props) => {
           ))}
         </View>
       </DrawerContentScrollView>
-
     </SafeAreaView>
   );
 };
 
 const MainDrawer = () => {
-  const[userData,setUserData]=useState(null)
+  const [userData, setUserData] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -172,17 +162,15 @@ const MainDrawer = () => {
       try {
         const userDataString = await AsyncStorage.getItem('userData');
         const userData = userDataString ? JSON.parse(userDataString) : null;
-       
-        setUserData(userData)
+
+        setUserData(userData);
         // console.warn('📦 Token:', token);
         // console.warn('👤 User Data:', userData);
-  
-     
       } catch (error) {
         console.log('❌ Error fetching user data:', error);
       }
     };
-  
+
     fetchUserData();
   }, []);
 
@@ -210,23 +198,22 @@ const MainDrawer = () => {
           },
         },
       ],
-      { cancelable: true }
+      {cancelable: true},
     );
   };
-  
-  
+
   return (
     <Drawer.Navigator
       initialRouteName="Dashboard"
-      drawerContent={(props) => <CustomDrawer {...props} userData={userData}/>}
-      screenOptions={({ route }) => ({
+      drawerContent={props => <CustomDrawer {...props} userData={userData} />}
+      screenOptions={({route}) => ({
         headerShown: true,
         headerTitle: () => null,
         headerStyle: {
           backgroundColor: '#CE5926',
           elevation: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
+          shadowOffset: {width: 0, height: 2},
           shadowOpacity: 0.1,
           shadowRadius: 8,
         },
@@ -244,11 +231,12 @@ const MainDrawer = () => {
           marginHorizontal: 12,
           marginVertical: 2,
         },
-        drawerIcon: ({ color, focused }) => {
+        drawerIcon: ({color, focused}) => {
           const icons = {
             Dashboard: 'view-dashboard',
             Profile: 'account',
             Attendance: 'calendar-clock',
+            Info: 'information-outline', // 👈 ADD THIS
           };
           return (
             <View
@@ -259,8 +247,7 @@ const MainDrawer = () => {
                     ? 'rgba(30, 64, 175, 0.1)'
                     : 'transparent',
                 },
-              ]}
-            >
+              ]}>
               <MaterialCommunityIcons
                 name={icons[route.name]}
                 size={22}
@@ -269,17 +256,13 @@ const MainDrawer = () => {
             </View>
           );
         },
-      })}
-    >
+      })}>
       <Drawer.Screen
         name="Dashboard"
         component={DashboardScreen}
         options={{
           headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{ marginRight: 16 }}
-            >
+            <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
               <MaterialCommunityIcons name="logout" size={24} color="#fff" />
             </TouchableOpacity>
           ),
@@ -291,10 +274,7 @@ const MainDrawer = () => {
         component={ProfileScreen}
         options={{
           headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{ marginRight: 16 }}
-            >
+            <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
               <MaterialCommunityIcons name="logout" size={24} color="#fff" />
             </TouchableOpacity>
           ),
@@ -306,15 +286,27 @@ const MainDrawer = () => {
         component={AttendanceScreen}
         options={{
           headerRight: () => (
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={{ marginRight: 16 }}
-            >
+            <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
               <MaterialCommunityIcons name="logout" size={24} color="#fff" />
             </TouchableOpacity>
           ),
         }}
       />
+      {userData?.crm_id === 525 && (
+        <Drawer.Screen
+          name="Info"
+          component={CompanyScreen}
+          options={{
+            headerRight: () => (
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={{marginRight: 16}}>
+                <MaterialCommunityIcons name="logout" size={24} color="#fff" />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+      )}
     </Drawer.Navigator>
   );
 };
@@ -333,9 +325,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
     marginBottom: 20,
-
   },
-  
+
   profileImageContainer: {
     position: 'relative',
     marginBottom: 15,
@@ -399,7 +390,7 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     paddingHorizontal: 10,
-    marginTop: Platform.OS === 'ios' ? -70 : 0, 
+    marginTop: Platform.OS === 'ios' ? -70 : 0,
   },
   sectionHeader: {
     fontSize: 12,
@@ -454,7 +445,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
+
   versionContainer: {
     flexDirection: 'row',
     alignItems: 'center',

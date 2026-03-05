@@ -1,5 +1,3 @@
-'use client';
-
 import {useState, useEffect, useCallback} from 'react';
 import {
   View,
@@ -78,15 +76,15 @@ const AttendanceDashboard = () => {
 
   const fetchAttendanceData = async () => {
     if (!userData) return;
-  
+
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('userToken');
-  
+
       const payload = {
         crmEmpID: userData.crm_id.toString(),
       };
-  
+
       const response = await fetch(
         `${BASE_URL}/CRMAttendance/GetWorkingHours`,
         {
@@ -96,30 +94,29 @@ const AttendanceDashboard = () => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
-  
+
       // 🔥 ALWAYS parse response first
       const data = await response.json();
-  
+
       // 🔒 Session expired
       if (response.status === 401) {
         Alert.alert('Session expired', 'Please login again');
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        navigation.reset({index: 0, routes: [{name: 'Login'}]});
         return;
       }
-  
+
       // ❌ Actual server error
-     
-  
+
       // ⚠️ No login/logout found (NOT an error)
       if (data.success === false) {
         setAttendanceRecords([]); // clear old data
-  
+
         setNoRecord(data?.message || 'Failed to fetch attendance data');
         return;
       }
-  
+
       // ✅ Success with data
       if (data.success && data.data) {
         setAttendanceRecords(data.data);
@@ -128,24 +125,24 @@ const AttendanceDashboard = () => {
       console.error('❌ API Call Failed:', error);
       Alert.alert(
         'Error',
-        'Unable to connect to server. Please try again later.'
+        'Unable to connect to server. Please try again later.',
       );
     } finally {
       setLoading(false);
     }
   };
-  
+
   const fetchBreakRecords = async () => {
     if (!userData) return;
-  
+
     try {
       setLoading(true);
-  
+
       const payload = {
         crmEmpID: userData.crm_id.toString(),
         Date: selectedDate,
       };
-  
+
       const response = await fetch(
         `${BASE_URL}/CRMAttendance/GetEmployeeTransactions`,
         {
@@ -156,62 +153,58 @@ const AttendanceDashboard = () => {
             // Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
-  
+
       // 🔥 ALWAYS parse response
       const res = await response.json();
-  
+
       // ❌ Unauthorized / server-side failure
       if (!response.ok) {
-        Alert.alert(
-          'Error',
-          res?.message || 'Unable to fetch break records'
-        );
+        Alert.alert('Error', res?.message || 'Unable to fetch break records');
         return;
       }
-  
+
       // ⚠️ No transactions found (NOT an error)
       if (res.success === false) {
-        setBreakRecords({ transactions: [], breaks: [] });
+        setBreakRecords({transactions: [], breaks: []});
         setEmpCode(null);
-  
+
         Alert.alert(
           'No Records',
-          res.message || 'No break records found for this date'
+          res.message || 'No break records found for this date',
         );
-  
+
         // optional: clear local cache
         await AsyncStorage.removeItem(BREAKS_LOCAL_KEY);
         return;
       }
-  
+
       // ✅ Success with data
       if (res.success && res.data) {
         setBreakRecords(res.data);
         setEmpCode(res.data.transactions?.[0]?.empcode || null);
-  
+
         await AsyncStorage.setItem(
           BREAKS_LOCAL_KEY,
           JSON.stringify({
             date: selectedDate,
             transactions: res.data.transactions,
-          })
+          }),
         );
-  
+
         loadBreaksFromLocal();
       }
     } catch (error) {
       console.error('❌ API Error:', error);
       Alert.alert(
         'Error',
-        'Unable to connect to server. Please try again later.'
+        'Unable to connect to server. Please try again later.',
       );
     } finally {
       setLoading(false);
     }
   };
-  
 
   // Attendance
   useFocusEffect(
@@ -467,7 +460,6 @@ const AttendanceDashboard = () => {
   return (
     <View edges={['top']} style={styles.container}>
       <StatusBar backgroundColor="#CE5926" barStyle="light-content" />
-
       <LinearGradient
         colors={['#CE5926', '#E67E50']}
         start={{x: 0, y: 0}}
@@ -503,190 +495,160 @@ const AttendanceDashboard = () => {
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}>
-    {isSunday() ? (
-    <LinearGradient
-      colors={['#16a34a', '#4ade80', '#bbf7d0']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[
-        styles.card,
-        {
-          paddingVertical: 34,
-          alignItems: 'center',
-          borderRadius: 24,
-        },
-      ]}
-    >
-      {/* Emoji */}
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <Text style={{ fontSize: 70 }}>🌴🔋</Text>
-      </Animated.View>
-
-      <Text
-        style={{
-          fontSize: 26,
-          fontWeight: '900',
-          color: '#052e16',
-          marginTop: 14,
-        }}
-      >
-        Sunday Recharge Mode
-      </Text>
-
-      <Text
-        style={{
-          fontSize: 15,
-          color: '#065f46',
-          marginTop: 10,
-          textAlign: 'center',
-          maxWidth: 280,
-          lineHeight: 22,
-        }}
-      >
-        No office. No pressure.{"\n"}Just relax & enjoy your day 😌
-      </Text>
-
-      <View
-        style={{
-          marginTop: 20,
-          backgroundColor: 'rgba(255,255,255,0.45)',
-          paddingHorizontal: 22,
-          paddingVertical: 10,
-          borderRadius: 30,
-          elevation: 4,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '800',
-            color: '#064e3b',
-            letterSpacing: 0.8,
-          }}
-        >
-          ☀️ SUNDAY • OFF DAY
-        </Text>
-      </View>
-    </LinearGradient>
-  ) : (
-    <>
-      {/* Working Hours Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.cardTitle}>⏰ Today's Working Hours</Text>
-            <Text style={styles.cardSubtitle}>Track your daily progress</Text>
-          </View>
-
-          <View
+        {isSunday() ? (
+          <LinearGradient
+            colors={['#16a34a', '#4ade80', '#bbf7d0']}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
             style={[
-              styles.badge,
-              { backgroundColor: getProgressColor() },
-            ]}
-          >
-            <Text style={styles.badgeText}>
-              {Math.min(progressPercent, 100).toFixed(0)}%
+              styles.card,
+              {
+                paddingVertical: 34,
+                alignItems: 'center',
+                borderRadius: 24,
+              },
+            ]}>
+            {/* Emoji */}
+            <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+              <Text style={{fontSize: 70}}>🌴🔋</Text>
+            </Animated.View>
+
+            <Text
+              style={{
+                fontSize: 26,
+                fontWeight: '900',
+                color: '#052e16',
+                marginTop: 14,
+              }}>
+              Sunday Recharge Mode
             </Text>
-          </View>
-        </View>
 
-        <View style={styles.hoursDisplay}>
-          <View style={styles.hoursBox}>
-            <Text style={styles.hoursValue}>
-              {attendanceRecords?.WorkingHours ?? '0'}
+            <Text
+              style={{
+                fontSize: 15,
+                color: '#065f46',
+                marginTop: 10,
+                textAlign: 'center',
+                maxWidth: 280,
+                lineHeight: 22,
+              }}>
+              No office. No pressure.{'\n'}Just relax & enjoy your day 😌
             </Text>
-            <Text style={styles.hoursLabel}>Hours Worked</Text>
-          </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.hoursBox}>
-            <Text style={styles.targetValue}>9</Text>
-            <Text style={styles.hoursLabel}>Daily Target</Text>
-          </View>
-        </View>
-
-        <View style={styles.progressContainer}>
-        {NoRecord ? (
-  <Text style={{ color: 'red', fontSize: 14, marginTop: 6,padding:20 }}>
-    {NoRecord}
-  </Text>
-) : null}
-          <View style={styles.progressBarBackground}>
             <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${Math.min(progressPercent, 100)}%`,
-                  backgroundColor: getProgressColor(),
-                },
-              ]}
-            />
-          </View>
-
-          <Text style={styles.progressText}>
-            {formatRemainingLiveTime()} remaining
-          </Text>
-        </View>
-      </View>
-
-      {/* Schedule Card */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>📅 Today's Schedule</Text>
-        </View>
-
-        <View style={styles.scheduleGrid}>
-          <View style={styles.scheduleItem}>
-            <Text style={styles.scheduleLabel}>Check-in</Text>
-            <Text style={[styles.scheduleTime, { color: '#10b981' }]}>
-              {attendanceRecords?.LoginTime
-                ? attendanceRecords.LoginTime.split(' ')?.[1]
-                : '--'}
-            </Text>
-          </View>
-
-          <View style={styles.scheduleItem}>
-            <Text style={styles.scheduleLabel}>Check-out</Text>
-            <Text style={[styles.scheduleTime, { color: '#CE5926' }]}>
-              {checkoutTime
-                ? formatTimeWithSeconds(checkoutTime)
-                : '----'}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </>
-  )}
-
-        {/* <View style={styles.card}>
-          {' '}
-          <View style={styles.cardHeader}>
-            {' '}
-            <Text style={styles.cardTitle}>📅 Today's Schedule</Text>{' '}
-          </View>{' '}
-          <View style={styles.scheduleGrid}>
-            {' '}
-            <View style={styles.scheduleItem}>
-              {' '}
-              <Text style={styles.scheduleLabel}>Check-in</Text>{' '}
-              <Text style={[styles.scheduleTime, {color: '#10b981'}]}>
-                {' '}
-                {attendanceRecords?.LoginTime?.split(' ')[1] ?? '--'}{' '}
-              </Text>{' '}
-            </View>{' '}
-            <View style={styles.scheduleItem}>
-              {' '}
-              <Text style={styles.scheduleLabel}>Check-out</Text>{' '}
-              <Text style={[styles.scheduleTime, {color: '#CE5926'}]}>
-                {' '}
-                {checkoutTime
-                  ? formatTimeWithSeconds(checkoutTime)
-                  : '----'}{' '}
+              style={{
+                marginTop: 20,
+                backgroundColor: 'rgba(255,255,255,0.45)',
+                paddingHorizontal: 22,
+                paddingVertical: 10,
+                borderRadius: 30,
+                elevation: 4,
+              }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: '800',
+                  color: '#064e3b',
+                  letterSpacing: 0.8,
+                }}>
+                ☀️ SUNDAY • OFF DAY
               </Text>
             </View>
-          </View>
-        </View> */}
+          </LinearGradient>
+        ) : (
+          <>
+            {/* Working Hours Card */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.cardTitle}>⏰ Today's Working Hours</Text>
+                  <Text style={styles.cardSubtitle}>
+                    Track your daily progress
+                  </Text>
+                </View>
+
+                <View
+                  style={[styles.badge, {backgroundColor: getProgressColor()}]}>
+                  <Text style={styles.badgeText}>
+                    {Math.min(progressPercent, 100).toFixed(0)}%
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.hoursDisplay}>
+                <View style={styles.hoursBox}>
+                  <Text style={styles.hoursValue}>
+                    {attendanceRecords?.WorkingHours ?? '0'}
+                  </Text>
+                  <Text style={styles.hoursLabel}>Hours Worked</Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.hoursBox}>
+                  <Text style={styles.targetValue}>9</Text>
+                  <Text style={styles.hoursLabel}>Daily Target</Text>
+                </View>
+              </View>
+
+              <View style={styles.progressContainer}>
+                {NoRecord ? (
+                  <Text
+                    style={{
+                      color: 'red',
+                      fontSize: 14,
+                      marginTop: 6,
+                      padding: 20,
+                    }}>
+                    {NoRecord}
+                  </Text>
+                ) : null}
+                <View style={styles.progressBarBackground}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${Math.min(progressPercent, 100)}%`,
+                        backgroundColor: getProgressColor(),
+                      },
+                    ]}
+                  />
+                </View>
+
+                <Text style={styles.progressText}>
+                  {formatRemainingLiveTime()} remaining
+                </Text>
+              </View>
+            </View>
+
+            {/* Schedule Card */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>📅 Today's Schedule</Text>
+              </View>
+
+              <View style={styles.scheduleGrid}>
+                <View style={styles.scheduleItem}>
+                  <Text style={styles.scheduleLabel}>Check-in</Text>
+                  <Text style={[styles.scheduleTime, {color: '#10b981'}]}>
+                    {attendanceRecords?.LoginTime
+                      ? attendanceRecords.LoginTime.split(' ')?.[1]
+                      : '--'}
+                  </Text>
+                </View>
+
+                <View style={styles.scheduleItem}>
+                  <Text style={styles.scheduleLabel}>Check-out</Text>
+                  <Text style={[styles.scheduleTime, {color: '#CE5926'}]}>
+                    {checkoutTime
+                      ? formatTimeWithSeconds(checkoutTime)
+                      : '----'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </>
+        )}
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -711,7 +673,7 @@ const AttendanceDashboard = () => {
               </Text>
               <Text style={styles.statLabel}>Remaining</Text>
             </View>
-            <View style={[styles.statCard, {borderLeftColor: '#ef4444'}]}>
+            <View style={[styles.statCard, styles.totalTimeCardSmall]}>
               <Text style={styles.statValue}>
                 {calculateTotalBreakMinutes(breakRecords?.breaks)}
               </Text>
@@ -894,196 +856,213 @@ const AttendanceDashboard = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0f4f8',
   },
   headerGradient: {
+    paddingTop: 50,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
   },
+
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 30,
   },
+
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+
   hiText: {
-    fontSize: 32,
-    marginRight: 12,
+    fontSize: 28,
+    marginRight: 10,
   },
+
   headerTextGroup: {
-    flex: 1,
+    justifyContent: 'center',
   },
+
   greetingText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  userNameText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 2,
+    opacity: 0.9,
   },
-  dateText: {
-    fontSize: 13,
-    color: '#f3f4f6',
+
+  userNameText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
     marginTop: 2,
   },
+
+  dateText: {
+    fontSize: 12,
+    color: '#FFFF8F',
+    opacity: 0.8,
+    marginTop: 2,
+  },
+
   timeBlock: {
-    alignItems: 'flex-end',
-    backgroundColor: '#fff',
-    padding: 8,
-    borderRadius: 10,
-    borderColor: '#E67E50',
-    borderWidth: 1.5, // thinner border
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 2},
-    elevation: 2, // Android ke liye light shadow
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    borderWidth: 1.2,
+    borderColor: '#DAA520', // soft white border
   },
 
   timeText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#CE5926',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    color: '#fff',
   },
   scrollContainer: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
 
   card: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    elevation: 3,
+    borderRadius: 24,
+    padding: 22,
+    marginBottom: 18,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e8eef7',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#1f2937',
   },
   cardSubtitle: {
     fontSize: 13,
-    color: '#9ca3af',
-    marginTop: 2,
+    color: '#6b7280',
+    marginTop: 4,
   },
   badge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 24,
   },
   badgeText: {
     color: '#fff',
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   hoursDisplay: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 12,
+    marginBottom: 20,
+    paddingVertical: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 18,
   },
   hoursBox: {
     alignItems: 'center',
     flex: 1,
   },
   hoursValue: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 36,
+    fontWeight: '900',
     color: '#CE5926',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   targetValue: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#9ca3af',
-    marginBottom: 4,
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#cbd5e1',
+    marginBottom: 6,
   },
   hoursLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#6b7280',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   divider: {
-    width: 1,
-    height: 40,
+    width: 1.5,
+    height: 50,
     backgroundColor: '#e5e7eb',
   },
   progressContainer: {
-    marginTop: 8,
+    marginTop: 12,
   },
   progressBarBackground: {
     width: '100%',
-    height: 10,
+    height: 12,
     backgroundColor: '#e5e7eb',
-    borderRadius: 5,
+    borderRadius: 8,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   progressBarFill: {
-    height: 10,
-    borderRadius: 5,
+    height: 12,
+    borderRadius: 8,
+    shadowColor: '#CE5926',
+    shadowOpacity: 0.4,
+    shadowOffset: {width: 0, height: 2},
   },
   progressText: {
     fontSize: 12,
     color: '#6b7280',
     textAlign: 'right',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   scheduleGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
   },
   scheduleItem: {
     flex: 1,
     backgroundColor: '#f8fafc',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#e8eef7',
   },
   scheduleLabel: {
     fontSize: 12,
     color: '#6b7280',
-    fontWeight: '500',
-    marginBottom: 6,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   scheduleTime: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
   },
   viewDetailsBtn: {
-    backgroundColor: '#f3f4f6',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    backgroundColor: '#CE5926',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 12,
   },
   viewDetailsText: {
     fontSize: 12,
-    color: '#CE5926',
-    fontWeight: '600',
+    color: '#fff',
+    fontWeight: '700',
   },
   breakStatsGrid: {
     flexDirection: 'row',
@@ -1093,39 +1072,43 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: '#f8fafc',
-    borderRadius: 14,
-    padding: 14,
-    borderLeftWidth: 4,
+    borderRadius: 16,
+    padding: 16,
+    borderLeftWidth: 5,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e8eef7',
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
     color: '#1f2937',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   statLabel: {
     fontSize: 12,
     color: '#6b7280',
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
   },
   breaksList: {
-    marginTop: 12,
+    marginTop: 14,
   },
   breaksListTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 10,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 12,
   },
   breakItem: {
     backgroundColor: '#fef3c7',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderLeftWidth: 4,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderLeftWidth: 5,
     borderLeftColor: '#f59e0b',
+    borderWidth: 1,
+    borderColor: '#fde68a',
   },
   breakTimeInfo: {
     flexDirection: 'row',
@@ -1134,18 +1117,18 @@ const styles = StyleSheet.create({
   },
   breakTime: {
     fontSize: 14,
-    color: '#374151',
+    color: '#78350f',
     fontWeight: '600',
   },
   durationBadge: {
-    backgroundColor: '#fbbf24',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: '#ea580c',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   durationText: {
     fontSize: 12,
-    color: '#92400e',
+    color: '#fff',
     fontWeight: '700',
   },
   statsRow: {
@@ -1155,136 +1138,138 @@ const styles = StyleSheet.create({
   },
   statCardGradient: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    paddingVertical: Platform.OS === 'ios' ? 0 : 18,
-    // paddingVertical:20
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    paddingVertical: Platform.OS === 'ios' ? 0 : 20,
   },
   statCardIcon: {
-    fontSize: 28,
-    marginBottom: 8,
+    fontSize: 32,
+    marginBottom: 10,
     marginTop: Platform.OS === 'ios' ? 10 : 0,
   },
   statCardValue: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 32,
+    fontWeight: '900',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   statCardLabel: {
     fontSize: 12,
-    color: '#f3f4f6',
-    fontWeight: '600',
+    color: '#e2e8f0',
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: Platform.OS === 'ios' ? 10 : 0,
   },
   statusCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 18,
     borderWidth: 2,
     marginBottom: 20,
+    backgroundColor: '#fff',
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 14,
   },
   statusText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 32,
     maxHeight: '90%',
-    elevation: 10,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: '#e8eef7',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#1f2937',
   },
   closeIcon: {
-    fontSize: 24,
+    fontSize: 28,
     color: '#9ca3af',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   modalSearchRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 18,
   },
   modalInput: {
     flex: 1,
-    height: 44,
-    borderWidth: 1,
+    height: 48,
+    borderWidth: 1.5,
     borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
     backgroundColor: '#f8fafc',
     fontSize: 14,
     color: '#1f2937',
   },
   datePickerBtn: {
-    height: 44,
-    borderWidth: 1,
+    height: 48,
+    borderWidth: 1.5,
     borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
     backgroundColor: '#f8fafc',
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 140,
+    minWidth: 150,
   },
   datePickerText: {
     fontSize: 14,
     color: '#1f2937',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   tableTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#1f2937',
-    marginBottom: 12,
-    marginTop: 12,
+    marginBottom: 14,
+    marginTop: 14,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 12,
     marginBottom: 8,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
@@ -1294,7 +1279,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   tableCellHeader: {
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#374151',
   },
   tableCellContent: {
@@ -1302,16 +1287,23 @@ const styles = StyleSheet.create({
   },
   modalCloseBtn: {
     backgroundColor: '#CE5926',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: 'center',
-    marginTop: 16,
-    elevation: 3,
+    marginTop: 18,
+    elevation: 4,
   },
   modalCloseBtnText: {
     color: '#fff',
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 16,
+  },
+  totalTimeCardSmall: {
+    borderLeftColor: '#ef4444',
+    borderLeftWidth: 5,
+    backgroundColor: '#fff7f7',
+    paddingVertical: 18, // thoda sa hi bada
+    flex: 1.9, // default shayad 1 hoga, isko thoda zyada de do
   },
 });
 
