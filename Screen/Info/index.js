@@ -10,8 +10,29 @@ import {
   TextInput,
   SafeAreaView,
   StatusBar,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import PremiumLoader from '../../Src/Component';
+
+const { width } = Dimensions.get('window');
+
+const COLORS = {
+  primary: '#F97316',
+  primaryDark: '#EA580C',
+  bg: '#F8FAFC',
+  white: '#FFFFFF',
+  slate900: '#0F172A',
+  slate600: '#475569',
+  slate400: '#94A3B8',
+  indigo: '#6366F1',
+  success: '#10B981',
+  border: '#E2E8F0',
+  gradient: ['#F97316', '#FB923C'],
+};
 
 const CompanyScreen = () => {
   const [loading, setLoading] = useState(false);
@@ -82,370 +103,260 @@ const CompanyScreen = () => {
     );
   }, [searchText, employeeList]);
 
+  const renderEmployeeCard = ({ item, index }) => (
+    <TouchableOpacity style={styles.card} activeOpacity={0.9}>
+      <View style={styles.cardLeft}>
+        <View style={styles.avatarContainer}>
+          <Text style={styles.avatarText}>
+            {item.EmployeeName.charAt(0).toUpperCase()}
+          </Text>
+          <View style={styles.onlineBadge} />
+        </View>
+        <View style={styles.infoGroup}>
+          <Text style={styles.employeeName}>{item.EmployeeName}</Text>
+          <Text style={styles.employeeId}>Employee ID: {item.Employee_ID}</Text>
+        </View>
+      </View>
+      <View style={styles.cardRight}>
+        <Icon name="chevron-right" size={20} color={COLORS.slate400} />
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
-      <View style={styles.container}>
-        
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Company Directory</Text>
-          <Text style={styles.subtitle}>Manage and explore your team</Text>
-        </View>
-
-        {/* Tab Navigation */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === 'group' && styles.activeTab,
-            ]}
-            onPress={fetchGroupInfo}
-            activeOpacity={0.7}>
-            <View style={[styles.tabIndicator, activeTab === 'group' && styles.activeTabIndicator]} />
-            <Text style={[styles.tabText, activeTab === 'group' && styles.activeTabText]}>
-              👥 Group Info
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === 'company' && styles.activeTab,
-            ]}
-            onPress={fetchCompanyInfo}
-            activeOpacity={0.7}>
-            <View style={[styles.tabIndicator, activeTab === 'company' && styles.activeTabIndicator]} />
-            <Text style={[styles.tabText, activeTab === 'company' && styles.activeTabText]}>
-              🏢 Company Info
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Loading Indicator */}
-        {loading && (
-          <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#60A5FA" />
-            <Text style={styles.loaderText}>Loading data...</Text>
-          </View>
-        )}
-
-        {/* Group Info Section */}
-        {activeTab === 'group' && !loading && (
-          <View style={styles.content}>
-            {/* Search Box */}
-            <View style={styles.searchContainer}>
-              <Text style={styles.searchIcon}>🔍</Text>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search employee name..."
-                placeholderTextColor="#94A3B8"
-                value={searchText}
-                onChangeText={setSearchText}
-              />
-              {searchText.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchText('')}>
-                  <Text style={styles.clearIcon}>✕</Text>
-                </TouchableOpacity>
-              )}
+    <View style={styles.mainContainer}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <PremiumLoader visible={loading} message="Fetching Employees..." />
+      
+      {/* PREMIUM HEADER */}
+      <LinearGradient colors={COLORS.gradient} style={styles.header}>
+        <SafeAreaView>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerSubtitle}>Directory</Text>
+              <Text style={styles.headerTitle}>Team Member</Text>
             </View>
+            <TouchableOpacity style={styles.filterBtn}>
+              <Icon name="tune" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-            {/* Employee Count Badge */}
-            {filteredList.length > 0 && (
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>
-                  {filteredList.length} employee{filteredList.length !== 1 ? 's' : ''} found
-                </Text>
+      <View style={styles.content}>
+        {/* SEGMENTED TAB SELECTOR */}
+        <View style={styles.tabWrapper}>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'group' && styles.activeTab]}
+              onPress={fetchGroupInfo}
+            >
+              <Text style={[styles.tabText, activeTab === 'group' && styles.activeTabText]}>
+                Group Members
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'company' && styles.activeTab]}
+              onPress={fetchCompanyInfo}
+            >
+              <Text style={[styles.tabText, activeTab === 'company' && styles.activeTabText]}>
+                Company Summary
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {loading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loaderText}>Syncing directory...</Text>
+          </View>
+        ) : (
+          <View style={{ flex: 1 }}>
+            {activeTab === 'group' ? (
+              <View style={{ flex: 1 }}>
+                {/* MODERN SEARCH BAR */}
+                <View style={styles.searchBox}>
+                  <Icon name="search" size={20} color={COLORS.slate400} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search by name..."
+                    placeholderTextColor={COLORS.slate400}
+                    value={searchText}
+                    onChangeText={setSearchText}
+                  />
+                  {searchText.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchText('')}>
+                      <Icon name="cancel" size={18} color={COLORS.slate400} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <FlatList
+                  data={filteredList}
+                  keyExtractor={(item) => item.Employee_ID.toString()}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.listContainer}
+                  renderItem={renderEmployeeCard}
+                  ListHeaderComponent={() => (
+                    <Text style={styles.resultsLabel}>
+                      Showing {filteredList.length} colleagues
+                    </Text>
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                      <Icon name="person-search" size={60} color={COLORS.slate400} opacity={0.3} />
+                      <Text style={styles.emptyTitle}>No Colleagues Found</Text>
+                      <Text style={styles.emptySub}>Try a different search term</Text>
+                    </View>
+                  }
+                />
+              </View>
+            ) : (
+              /* COMPANY SUMMARY UI */
+              <View style={styles.summaryContainer}>
+                <LinearGradient 
+                  colors={['#6366F1', '#4F46E5']} 
+                  start={{x:0, y:0}} end={{x:1, y:0}}
+                  style={styles.statsCard}
+                >
+                  <View style={styles.statsRow}>
+                    <View>
+                      <Text style={styles.statsNum}>{employeeCount || 0}</Text>
+                      <Text style={styles.statsLabel}>Total Workforce</Text>
+                    </View>
+                    <View style={styles.statsIconBox}>
+                      <Icon name="groups" size={40} color="rgba(255,255,255,0.4)" />
+                    </View>
+                  </View>
+                  <View style={styles.statsProgressTrack}>
+                    <View style={styles.statsProgressFill} />
+                  </View>
+                  <Text style={styles.statsFooterText}>+2% increase from last month</Text>
+                </LinearGradient>
+
+                <View style={styles.infoGrid}>
+                  <View style={styles.gridCard}>
+                    <View style={[styles.gridIcon, { backgroundColor: COLORS.success + '15' }]}>
+                      <Icon name="verified-user" size={24} color={COLORS.success} />
+                    </View>
+                    <Text style={styles.gridVal}>{Math.round(employeeCount * 0.85)}</Text>
+                    <Text style={styles.gridLab}>On-Duty</Text>
+                  </View>
+                  <View style={styles.gridCard}>
+                    <View style={[styles.gridIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                      <Icon name="event-busy" size={24} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.gridVal}>{Math.round(employeeCount * 0.15)}</Text>
+                    <Text style={styles.gridLab}>On-Leave</Text>
+                  </View>
+                </View>
               </View>
             )}
-
-            {/* Employee List */}
-            <FlatList
-  data={filteredList}
-  keyExtractor={(item) => item.Employee_ID.toString()}
-  showsVerticalScrollIndicator={false}
-  contentContainerStyle={{ paddingBottom: 90 }}
-              renderItem={({ item, index }) => (
-                <View style={[styles.card, { marginTop: index === 0 ? 0 : 12 }]}>
-                  <View style={styles.cardContent}>
-                    <View style={styles.avatarContainer}>
-                      <Text style={styles.avatar}>
-                        {item.EmployeeName.charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={styles.employeeInfo}>
-                      <Text style={styles.employeeName}>{item.EmployeeName}</Text>
-                      <Text style={styles.employeeId}>
-                        ID: {item.Employee_ID}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={styles.chevron}>
-                    <Text>→</Text>
-                  </View>
-                </View>
-              )}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyIcon}>👤</Text>
-                  <Text style={styles.emptyText}>No employees found</Text>
-                  <Text style={styles.emptySubtext}>
-                    Try adjusting your search
-                  </Text>
-                </View>
-              }
-            />
-          </View>
-        )}
-
-        {/* Company Info Count Section */}
-        {activeTab === 'company' && employeeCount !== null && !loading && (
-          <View style={styles.content}>
-            <View style={styles.statsCard}>
-              <View style={styles.statsContent}>
-                <Text style={styles.statsIcon}>📊</Text>
-                <View style={styles.statsTextContainer}>
-                  <Text style={styles.statsLabel}>Total Employees</Text>
-                  <Text style={styles.statsNumber}>{employeeCount}</Text>
-                </View>
-              </View>
-              <View style={styles.statsDecor} />
-            </View>
-
-            <View style={styles.infoGrid}>
-              <View style={styles.infoCard}>
-                <Text style={styles.infoIcon}>👨‍💼</Text>
-                <Text style={styles.infoLabel}>Active</Text>
-                <Text style={styles.infoValue}>{Math.round(employeeCount * 0.85)}</Text>
-              </View>
-              <View style={styles.infoCard}>
-                <Text style={styles.infoIcon}>📅</Text>
-                <Text style={styles.infoLabel}>On Leave</Text>
-                <Text style={styles.infoValue}>{Math.round(employeeCount * 0.15)}</Text>
-              </View>
-            </View>
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
-export default CompanyScreen;
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 18,
-    paddingTop: 12,
-  },
-
-  /* Header */
+  mainContainer: { flex: 1, backgroundColor: COLORS.bg },
   header: {
-    marginBottom: 22,
+    paddingBottom: 40,
+    paddingHorizontal: 25,
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#0F172A',
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 10 : 25,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 4,
-  },
+  headerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600' },
+  headerTitle: { color: '#FFF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
+  filterBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
 
-  /* Tabs */
+  content: { flex: 1, marginTop: -25 },
+  tabWrapper: { paddingHorizontal: 25, marginBottom: 20 },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 14,
-    padding: 5,
-    marginBottom: 20,
+    backgroundColor: '#FFF',
+    padding: 6,
+    borderRadius: 18,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 3 }
+    })
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  activeTab: {
-    backgroundColor: '#F97316',
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-  },
+  tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 14 },
+  activeTab: { backgroundColor: COLORS.primary },
+  tabText: { fontSize: 13, fontWeight: '700', color: COLORS.slate600 },
+  activeTabText: { color: '#FFF' },
 
-  /* Search */
-  searchContainer: {
+  searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    marginBottom: 18,
-    height: 50,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#0F172A',
-  },
-  clearIcon: {
-    fontSize: 18,
-    color: '#94A3B8',
-  },
-
-  /* Employee Count */
-  countBadge: {
-    backgroundColor: '#DBEAFE',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginBottom: 14,
-  },
-  countBadgeText: {
-    color: '#1E40AF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  /* Employee Card */
-  card: {
-    backgroundColor: '#FFFFFF',
+    marginHorizontal: 25,
+    backgroundColor: '#FFF',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
+    paddingHorizontal: 15,
+    height: 52,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 15,
+  },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: COLORS.slate900, fontWeight: '500' },
+
+  listContainer: { paddingHorizontal: 25, paddingBottom: 40 },
+  resultsLabel: { fontSize: 12, fontWeight: '800', color: COLORS.slate400, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    backgroundColor: '#FFF',
+    padding: 15,
+    borderRadius: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
+  cardLeft: { flexDirection: 'row', alignItems: 'center' },
   avatarContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F97316',
+    borderRadius: 16,
+    backgroundColor: COLORS.primary + '15',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
   },
-  avatar: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  avatarText: { color: COLORS.primary, fontSize: 18, fontWeight: '800' },
+  onlineBadge: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, backgroundColor: COLORS.success, borderWidth: 3, borderColor: '#FFF' },
+  infoGroup: { marginLeft: 15 },
+  employeeName: { fontSize: 16, fontWeight: '700', color: COLORS.slate900 },
+  employeeId: { fontSize: 12, color: COLORS.slate400, marginTop: 2, fontWeight: '600' },
 
-  employeeName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  employeeId: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
-  },
+  summaryContainer: { paddingHorizontal: 25, flex: 1 },
+  statsCard: { padding: 25, borderRadius: 28, marginBottom: 20 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statsNum: { fontSize: 36, fontWeight: '800', color: '#FFF' },
+  statsLabel: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
+  statsProgressTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, marginVertical: 20 },
+  statsProgressFill: { width: '70%', height: '100%', backgroundColor: '#FFF', borderRadius: 3 },
+  statsFooterText: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '700' },
 
-  /* Empty */
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  emptySubtext: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 4,
-  },
+  infoGrid: { flexDirection: 'row', justifyContent: 'space-between' },
+  gridCard: { width: '48%', backgroundColor: '#FFF', padding: 20, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  gridIcon: { width: 50, height: 50, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  gridVal: { fontSize: 24, fontWeight: '800', color: COLORS.slate900 },
+  gridLab: { fontSize: 12, color: COLORS.slate400, fontWeight: '700', marginTop: 4 },
 
-  /* Stats Card */
-  statsCard: {
-    backgroundColor: '#F97316',
-    borderRadius: 18,
-    padding: 22,
-    marginBottom: 20,
-    elevation: 6,
-  },
-  statsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statsIcon: {
-    fontSize: 36,
-    marginRight: 16,
-  },
-  statsLabel: {
-    fontSize: 13,
-    color: '#BFDBFE',
-  },
-  statsNumber: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-
-  /* Info Cards */
-  infoGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  infoCard: {
-    width: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 20,
-    alignItems: 'center',
-    elevation: 4,
-  },
-  infoIcon: {
-    fontSize: 26,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 6,
-  },
-  infoValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-  },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loaderText: { marginTop: 15, color: COLORS.slate600, fontWeight: '600' },
+  emptyState: { alignItems: 'center', marginTop: 60 },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: COLORS.slate900, marginTop: 15 },
+  emptySub: { fontSize: 14, color: COLORS.slate400, marginTop: 5 }
 });
+
+export default CompanyScreen;

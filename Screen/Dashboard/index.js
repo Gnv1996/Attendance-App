@@ -23,6 +23,7 @@ import {BASE_URL} from '../../config';
 import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import {useEmployee} from '../Context/EmployeeContext';
+import PremiumLoader from '../../Src/Component';
 
 const {width} = Dimensions.get('window');
 
@@ -460,8 +461,10 @@ const AttendanceDashboard = () => {
   return (
     <View edges={['top']} style={styles.container}>
       <StatusBar backgroundColor="#CE5926" barStyle="light-content" />
+
+      <PremiumLoader visible={loading} message="Fetching Employees..." />
       <LinearGradient
-        colors={['#CE5926', '#E67E50']}
+        colors={['#F97316', '#EA580C', '#C2410C'] }
         start={{x: 0, y: 0}}
         end={{x: 1, y: 1}}
         style={styles.headerGradient}>
@@ -495,64 +498,112 @@ const AttendanceDashboard = () => {
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}>
-        {isSunday() ? (
+      {isSunday() ? (
           <LinearGradient
-            colors={['#16a34a', '#4ade80', '#bbf7d0']}
+            colors={['#0369A1', '#0891B2', '#06B6D4']}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={[
               styles.card,
               {
-                paddingVertical: 34,
+                paddingVertical: 48,
+                paddingHorizontal: 24,
                 alignItems: 'center',
-                borderRadius: 24,
+                borderRadius: 28,
+                marginBottom: 20,
+                shadowColor: '#000',
+                shadowOpacity: 0.15,
+                shadowOffset: {width: 0, height: 8},
+                shadowRadius: 16,
+                elevation: 10,
               },
             ]}>
-            {/* Emoji */}
-            <Animated.View style={{transform: [{scale: scaleAnim}]}}>
-              <Text style={{fontSize: 70}}>🌴🔋</Text>
+            {/* Animated Emoji */}
+            <Animated.View style={{transform: [{scale: scaleAnim}], marginBottom: 16}}>
+              <Text style={{fontSize: 80}}>🌊✨</Text>
             </Animated.View>
 
             <Text
               style={{
-                fontSize: 26,
+                fontSize: 32,
                 fontWeight: '900',
-                color: '#052e16',
-                marginTop: 14,
+                color: '#fff',
+                marginTop: 8,
+                textAlign: 'center',
+                letterSpacing: 0.5,
               }}>
-              Sunday Recharge Mode
+              Sunday Recharge
             </Text>
 
             <Text
               style={{
-                fontSize: 15,
-                color: '#065f46',
-                marginTop: 10,
+                fontSize: 16,
+                color: 'rgba(255,255,255,0.95)',
+                marginTop: 12,
                 textAlign: 'center',
-                maxWidth: 280,
-                lineHeight: 22,
+                maxWidth: 300,
+                lineHeight: 24,
+                fontWeight: '500',
               }}>
-              No office. No pressure.{'\n'}Just relax & enjoy your day 😌
+              Time to unwind and recharge your batteries{'\n'}You&apos;ve earned it! 🎉
             </Text>
 
             <View
               style={{
-                marginTop: 20,
-                backgroundColor: 'rgba(255,255,255,0.45)',
-                paddingHorizontal: 22,
-                paddingVertical: 10,
-                borderRadius: 30,
-                elevation: 4,
+                marginTop: 28,
+                flexDirection: 'row',
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                paddingHorizontal: 28,
+                paddingVertical: 14,
+                borderRadius: 40,
+                borderWidth: 2,
+                borderColor: 'rgba(255,255,255,0.4)',
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOpacity: 0.2,
+                shadowOffset: {width: 0, height: 4},
+                shadowRadius: 8,
+                elevation: 5,
               }}>
+              <Text style={{fontSize: 16, marginRight: 8}}>☀️</Text>
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: '800',
-                  color: '#064e3b',
-                  letterSpacing: 0.8,
+                  color: '#fff',
+                  letterSpacing: 1,
                 }}>
-                ☀️ SUNDAY • OFF DAY
+                REST DAY
               </Text>
+            </View>
+
+            <View style={{marginTop: 24, flexDirection: 'row', gap: 16}}>
+              <View style={{
+                flex: 1,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                borderRadius: 16,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.2)',
+              }}>
+                <Text style={{fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>No Check-in</Text>
+                <Text style={{fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4}}>Required</Text>
+              </View>
+              <View style={{
+                flex: 1,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                paddingVertical: 12,
+                paddingHorizontal: 14,
+                borderRadius: 16,
+                alignItems: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.2)',
+              }}>
+                <Text style={{fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>Enjoy Your</Text>
+                <Text style={{fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4}}>Weekend</Text>
+              </View>
             </View>
           </LinearGradient>
         ) : (
@@ -681,13 +732,7 @@ const AttendanceDashboard = () => {
             </View>
           </View>
 
-          {loading && (
-            <ActivityIndicator
-              size="large"
-              color="#CE5926"
-              style={{marginTop: 20}}
-            />
-          )}
+          
 
           {breakRecords?.breaks && breakRecords.breaks.length > 0 && (
             <View style={styles.breaksList}>

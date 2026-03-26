@@ -28,128 +28,115 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Drawer = createDrawerNavigator();
 const {width} = Dimensions.get('window');
 
-const CustomDrawer = props => {
-  const navigation = useNavigation();
-  const [userData, setUserData] = useState(null);
+const COLORS = {
+  primary: '#EA580C', 
+  primaryLight: '#FB923C',
+  success: '#10B981',
+  slate900: '#0F172A',
+  slate600: '#475569',
+  slate400: '#94A3B8',
+  slate100: '#F1F5F9',
+  bg: '#F8FAFC',
+  white: '#FFFFFF',
+  gradient: ['#F97316', '#EA580C', '#C2410C'],
+};
 
-  const name = userData?.name || 'Guest User';
-  const email = userData?.email || 'example@email.com';
+const CustomDrawer = props => {
+  const [userData, setUserData] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
       const fetchUserData = async () => {
         try {
           const userDataString = await AsyncStorage.getItem('userData');
-          const userData = userDataString ? JSON.parse(userDataString) : null;
-
-          console.warn(userData, 'see the user Data>>>>>');
-
-          setUserData(userData);
+          if (userDataString) setUserData(JSON.parse(userDataString));
         } catch (error) {
           console.log('❌ Error fetching user data:', error);
         }
       };
-
       fetchUserData();
-
-      // cleanup (optional)
-      return () => {
-        // screen blur hone par kuch cleanup chahiye ho to
-      };
     }, []),
   );
 
   const menuItems = [
-    {
-      icon: 'bell-outline',
-      title: 'Notifications',
-      subtitle: '3 new messages',
-      onPress: () => console.log('Notifications pressed'),
-    },
-    {
-      icon: 'cog-outline',
-      title: 'Settings',
-      subtitle: 'App preferences',
-      onPress: () => console.log('Settings pressed'),
-    },
-    {
-      icon: 'help-circle-outline',
-      title: 'Help & Support',
-      subtitle: 'Get assistance',
-      onPress: () => console.log('Help pressed'),
-    },
+    { icon: 'bell-ring-outline', title: 'Notifications', subtitle: '3 new updates', color: '#6366F1' },
+    { icon: 'shield-lock-outline', title: 'Security', subtitle: 'Account secure', color: COLORS.success },
+    { icon: 'heart-outline', title: 'Help Center', subtitle: 'Get support', color: '#EC4899' },
   ];
 
   return (
-    <SafeAreaView style={styles.drawerContainer}>
-      <StatusBar
-        backgroundColor="#CE5926"
-        barStyle="light-content"
-        translucent={false}
-      />
+    <View style={styles.drawerContainer}>
+      <StatusBar backgroundColor={COLORS.primary} barStyle="light-content" />
 
-      <View style={styles.profileContainer}>
-        <View style={styles.profileImageContainer}>
-          <Image
-            source={{uri: userData?.profileImage}}
-            style={styles.profileImage}
-          />
-          <View style={styles.onlineIndicator} />
-        </View>
-        <Text style={styles.profileName}>{name}</Text>
-        <Text style={styles.profileEmail}>{email}</Text>
+      {/* REFINED HEADER SECTION */}
+      <LinearGradient colors={COLORS.gradient} style={styles.profileContainer}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.headerContent}>
+            <View style={styles.avatarWrapper}>
+              <View style={styles.imageInnerBorder}>
+                <Image
+                  source={{uri: userData?.profileImage || 'https://via.placeholder.com/150'}}
+                  style={styles.profileImage}
+                />
+              </View>
+              <View style={styles.activeSpot} />
+            </View>
+            
+            <View style={styles.nameBlock}>
+              <Text style={styles.profileName} numberOfLines={1}>
+                {userData?.name || 'User Name'}
+              </Text>
+              <Text style={styles.profileEmail} numberOfLines={1}>
+                {userData?.email || 'user@company.com'}
+              </Text>
+            </View>
 
-        <View style={styles.profileStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>24</Text>
-            <Text style={styles.statLabel}>Projects</Text>
+            {/* FROSTED STATS CARD */}
+            <View style={styles.glassStats}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNum}>24</Text>
+                <Text style={styles.statLab}>PROJECTS</Text>
+              </View>
+              <View style={styles.statLine} />
+              <View style={styles.statBox}>
+                <Text style={styles.statNum}>156</Text>
+                <Text style={styles.statLab}>TASKS</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>156</Text>
-            <Text style={styles.statLabel}>Tasks</Text>
-          </View>
-        </View>
-      </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-      <DrawerContentScrollView
-        {...props}
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.menuContainer}>
-          <Text style={styles.sectionHeader}>MAIN MENU</Text>
+      <DrawerContentScrollView {...props} showsVerticalScrollIndicator={false}>
+        <View style={styles.mainNav}>
+          <Text style={styles.sectionTitle}>WORKSPACE</Text>
           <DrawerItemList {...props} />
         </View>
 
-        <View style={styles.extraMenuContainer}>
-          <Text style={styles.sectionHeader}>QUICK ACCESS</Text>
+        <View style={styles.quickAccessNav}>
+          <Text style={styles.sectionTitle}>QUICK ACCESS</Text>
           {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuCard}
-              onPress={item.onPress}
-              activeOpacity={0.7}>
-              <View style={styles.menuIconContainer}>
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={22}
-                  color="#3b82f6"
-                />
+            <TouchableOpacity key={index} style={styles.menuCard} activeOpacity={0.8}>
+              <View style={[styles.iconPlate, {backgroundColor: item.color + '15'}]}>
+                <MaterialCommunityIcons name={item.icon} size={20} color={item.color} />
               </View>
-              <View style={styles.menuTextContainer}>
-                <Text style={styles.menuCardTitle}>{item.title}</Text>
-                <Text style={styles.menuCardSubtitle}>{item.subtitle}</Text>
+              <View style={styles.cardText}>
+                <Text style={styles.cardTitle}>{item.title}</Text>
+                <Text style={styles.cardSub}>{item.subtitle}</Text>
               </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={20}
-                color="#cbd5e1"
-              />
+              <MaterialCommunityIcons name="chevron-right" size={16} color={COLORS.slate400} />
             </TouchableOpacity>
           ))}
         </View>
       </DrawerContentScrollView>
-    </SafeAreaView>
+
+      {/* MINIMALIST FOOTER */}
+      <View style={styles.footerContainer}>
+        <Text style={styles.versionText}>v2.4.0</Text>
+        <View style={styles.footerDot} />
+        <Text style={styles.devBy}>Developed by <Text style={styles.devName}>Gautam</Text></Text>
+      </View>
+    </View>
   );
 };
 
@@ -161,308 +148,141 @@ const MainDrawer = () => {
     const fetchUserData = async () => {
       try {
         const userDataString = await AsyncStorage.getItem('userData');
-        const userData = userDataString ? JSON.parse(userDataString) : null;
-
-        setUserData(userData);
-        // console.warn('📦 Token:', token);
-        // console.warn('👤 User Data:', userData);
-      } catch (error) {
-        console.log('❌ Error fetching user data:', error);
-      }
+        if (userDataString) setUserData(JSON.parse(userDataString));
+      } catch (error) {}
     };
-
     fetchUserData();
   }, []);
 
   const handleLogout = () => {
-    Alert.alert(
-      '🔓 Logout',
-      '👋 Are you sure you want to log out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    Alert.alert('Session Exit', 'Are you sure you want to end your current session?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.multiRemove(['userToken', 'userData']);
+          navigation.replace('Login');
         },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem('userToken');
-              await AsyncStorage.removeItem('userData');
-              navigation.replace('Login'); // ✅ No need to pass it
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-            }
-          },
-        },
-      ],
-      {cancelable: true},
-    );
+      },
+    ]);
   };
 
   return (
     <Drawer.Navigator
-      initialRouteName="Dashboard"
-      drawerContent={props => <CustomDrawer {...props} userData={userData} />}
+      drawerContent={props => <CustomDrawer {...props} />}
       screenOptions={({route}) => ({
         headerShown: true,
-        headerTitle: () => null,
-        headerStyle: {
-          backgroundColor: '#CE5926',
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: {width: 0, height: 2},
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-        },
+        headerTitle: route.name,
+        headerTitleStyle: {fontWeight: '900', fontSize: 18, color: '#FFF'},
+        headerStyle: { backgroundColor: COLORS.primary, elevation: 0, shadowOpacity: 0 },
         headerTintColor: '#fff',
-        drawerActiveTintColor: '#CE5926',
-        drawerInactiveTintColor: '#64748b',
-        drawerActiveBackgroundColor: 'rgba(30, 64, 175, 0.08)',
-        drawerLabelStyle: {
-          marginLeft: -15,
-          fontSize: 15,
-          fontWeight: '500',
-        },
-        drawerItemStyle: {
-          borderRadius: 12,
-          marginHorizontal: 12,
-          marginVertical: 2,
-        },
-        drawerIcon: ({color, focused}) => {
+        drawerActiveTintColor: COLORS.primary,
+        drawerInactiveTintColor: COLORS.slate600,
+        drawerActiveBackgroundColor: COLORS.primary + '0D',
+        drawerLabelStyle: {marginLeft: -10, fontSize: 14, fontWeight: '800'},
+        drawerItemStyle: {borderRadius: 14, marginHorizontal: 12, marginVertical: 4},
+        headerRight: () => (
+          <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
+            <MaterialCommunityIcons name="power-standby" size={24} color="#fff" />
+          </TouchableOpacity>
+        ),
+        drawerIcon: ({color}) => {
           const icons = {
             Dashboard: 'view-dashboard',
-            Profile: 'account',
-            Attendance: 'calendar-clock',
-            Info: 'information-outline', // 👈 ADD THIS
+            Profile: 'account-circle-outline',
+            Attendance: 'calendar-check-outline',
+            Info: 'office-building-marker-outline',
           };
-          return (
-            <View
-              style={[
-                styles.drawerIconContainer,
-                {
-                  backgroundColor: focused
-                    ? 'rgba(30, 64, 175, 0.1)'
-                    : 'transparent',
-                },
-              ]}>
-              <MaterialCommunityIcons
-                name={icons[route.name]}
-                size={22}
-                color={color}
-              />
-            </View>
-          );
+          return <MaterialCommunityIcons name={icons[route.name]} size={22} color={color} />;
         },
       })}>
-      <Drawer.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          headerRight: () => (
-            <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
-              <MaterialCommunityIcons name="logout" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          headerRight: () => (
-            <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
-              <MaterialCommunityIcons name="logout" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="Attendance"
-        component={AttendanceScreen}
-        options={{
-          headerRight: () => (
-            <TouchableOpacity onPress={handleLogout} style={{marginRight: 16}}>
-              <MaterialCommunityIcons name="logout" size={24} color="#fff" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-      {userData?.crm_id === 525 && (
-        <Drawer.Screen
-          name="Info"
-          component={CompanyScreen}
-          options={{
-            headerRight: () => (
-              <TouchableOpacity
-                onPress={handleLogout}
-                style={{marginRight: 16}}>
-                <MaterialCommunityIcons name="logout" size={24} color="#fff" />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-      )}
+      <Drawer.Screen name="Dashboard" component={DashboardScreen} />
+      <Drawer.Screen name="Profile" component={ProfileScreen} />
+      <Drawer.Screen name="Attendance" component={AttendanceScreen} />
+      {userData?.crm_id === 525 && <Drawer.Screen name="Info" component={CompanyScreen} />}
     </Drawer.Navigator>
   );
 };
 
 const styles = StyleSheet.create({
-  drawerContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
+  drawerContainer: {flex: 1, backgroundColor: COLORS.white},
+  profileContainer: {paddingBottom: 35, borderBottomLeftRadius: 40, borderBottomRightRadius: 40},
+  headerContent: {alignItems: 'center', paddingTop: 15, paddingHorizontal: 20},
+  avatarWrapper: { marginBottom: 15 },
+  imageInnerBorder: {
+    padding: 3,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  scrollViewContent: {
-    flexGrow: 1,
-  },
-  profileContainer: {
-    backgroundColor: '#CE5926',
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: 40,
-    marginBottom: 20,
-  },
-
-  profileImageContainer: {
-    position: 'relative',
-    marginBottom: 15,
-    marginTop: Platform.OS === 'ios' ? 20 : 0,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: '#ffffff',
-  },
-  onlineIndicator: {
+  profileImage: {width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: '#FFF'},
+  activeSpot: {
     position: 'absolute',
-    bottom: 5,
-    right: 5,
+    bottom: 8,
+    right: 8,
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#10b981',
-    borderWidth: 3,
-    borderColor: '#ffffff',
+    backgroundColor: COLORS.success,
+    borderWidth: 4,
+    borderColor: COLORS.primary,
   },
-  profileName: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  profileEmail: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  profileStats: {
+  nameBlock: {alignItems: 'center', marginBottom: 25},
+  profileName: {color: '#FFF', fontSize: 22, fontWeight: '900', letterSpacing: -0.6},
+  profileEmail: {color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 4, fontWeight: '500'},
+
+  glassStats: {
     flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 25,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)'
   },
-  statItem: {
-    alignItems: 'center',
+  statBox: {alignItems: 'center'},
+  statNum: {color: '#FFF', fontSize: 18, fontWeight: '900'},
+  statLab: {color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '700', marginTop: 2, letterSpacing: 1},
+  statLine: {width: 1, height: 25, backgroundColor: 'rgba(255,255,255,0.2)', marginHorizontal: 30},
+
+  mainNav: {marginTop: 25},
+  sectionTitle: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: COLORS.slate400,
+    marginLeft: 28,
+    marginBottom: 12,
+    letterSpacing: 2,
   },
-  statNumber: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  statLabel: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    marginHorizontal: 20,
-  },
-  menuContainer: {
-    paddingHorizontal: 10,
-    marginTop: Platform.OS === 'ios' ? -70 : 0,
-  },
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94a3b8',
-    marginBottom: 15,
-    marginLeft: 20,
-    letterSpacing: 1,
-  },
-  extraMenuContainer: {
-    paddingHorizontal: 10,
-    marginTop: 20,
-  },
+  quickAccessNav: {marginTop: 25, paddingHorizontal: 15},
   menuCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginVertical: 4,
-    marginHorizontal: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  menuIconContainer: {
-    width: 40,
-    height: 40,
+    backgroundColor: COLORS.bg,
+    padding: 15,
     borderRadius: 20,
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: COLORS.slate100,
   },
-  menuTextContainer: {
-    flex: 1,
-  },
-  menuCardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  menuCardSubtitle: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  drawerIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  iconPlate: {width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center'},
+  cardText: {flex: 1, marginLeft: 15},
+  cardTitle: {fontSize: 14, fontWeight: '800', color: COLORS.slate900},
+  cardSub: {fontSize: 11, color: COLORS.slate600, marginTop: 2, fontWeight: '500'},
 
-  versionContainer: {
+  footerContainer: {
+    paddingVertical: 25,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.slate100,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  versionText: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
-  versionDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: '#cbd5e1',
-    marginHorizontal: 8,
-  },
+  versionText: {fontSize: 11, color: COLORS.slate400, fontWeight: '800'},
+  footerDot: {width: 4, height: 4, borderRadius: 2, backgroundColor: COLORS.slate400, marginHorizontal: 10, opacity: 0.3},
+  devBy: {fontSize: 11, color: COLORS.slate600, fontWeight: '600'},
+  devName: {color: COLORS.primary, fontWeight: '900'}
 });
 
 export default MainDrawer;

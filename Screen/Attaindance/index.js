@@ -14,19 +14,28 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import moment from 'moment';
 import { BASE_URL } from '../../config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import PremiumLoader from '../../Src/Component';
 
 const { width } = Dimensions.get('window');
 
 const LeaveSummaryHeader = ({ leaves }) => {
   return (
-    <View style={styles.summaryContainer}>
+    <LinearGradient
+      colors={['#F97316', '#EA580C', '#C2410C']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={styles.summaryContainer}
+    >
       {leaves.map((item, index) => (
         <View key={index} style={styles.summaryCard}>
-          <Text style={styles.summaryType}>{item.LeaveType}</Text>
-          <Text style={styles.summaryCount}>{item.Available}</Text>
+          <View style={styles.summaryCardInner}>
+            <Text style={styles.summaryCount}>{item.Available}</Text>
+            <Text style={styles.summaryType}>{item.LeaveType}</Text>
+          </View>
         </View>
       ))}
-    </View>
+    </LinearGradient>
   );
 };
 
@@ -96,7 +105,12 @@ const AttendanceScreen = () => {
       if (result.success && result.data) {
         // 0 → Leave summary
         const leaveSummary = result.data[0] || [];
-        setLeaveSummary(leaveSummary);
+
+        const filteredLeaves = leaveSummary.filter(item =>
+          ['CL', 'SL', 'OL', 'WO'].includes(item.LeaveType)
+        );
+        
+        setLeaveSummary(filteredLeaves);
       
         // 1 → Day-wise attendance
         const dayRecords = result.data[1] || [];
@@ -358,31 +372,56 @@ const AttendanceScreen = () => {
   const goNextMonth = () => setSelectedMonth(prev => prev.clone().add(1, 'month'));
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
-      <StatusBar backgroundColor="#e89875" barStyle="light-content" />
+    <View style={{ flex: 1, backgroundColor: '#f0f4f8' }}>
+      <StatusBar backgroundColor="#EA580C" barStyle="light-content" />
+      <PremiumLoader visible={loading} message="Fetching Employees..." />
       <LeaveSummaryHeader leaves={leaveSummary} />
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20, backgroundColor: '#CE5926', borderBottomLeftRadius: 25, borderBottomRightRadius: 25 }}>
+      <LinearGradient
+  colors={['#F97316', '#EA580C', '#C2410C']}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 0 }}
+  style={{ 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingTop: 16, 
+    paddingBottom: 24, 
+    borderBottomLeftRadius: 30, 
+    borderBottomRightRadius: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 10
+  }}
+>
   
-        <TouchableOpacity onPress={goPrevMonth}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color="white" />
-        </TouchableOpacity>
-        <View>
-        <TouchableOpacity onPress={() => fetchAttendanceRecord()}>
-  <Text style={{ fontSize: 20, fontWeight: '700', color: 'white' }}>
-    {selectedMonth.format('MMMM YYYY')}
-  </Text>
-</TouchableOpacity>
+  <TouchableOpacity onPress={goPrevMonth} style={{ padding: 8 }}>
+    <MaterialCommunityIcons name="chevron-left" size={28} color="white" />
+  </TouchableOpacity>
 
-          <Text style={{ fontSize: 13, color: 'white' }}>Attendance Overview</Text>
-        </View>
-        <TouchableOpacity onPress={goNextMonth}>
-          <MaterialCommunityIcons name="chevron-right" size={28} color="white" />
-        </TouchableOpacity>
-      </View>
+  <View style={{ alignItems: 'center' }}>
+    <TouchableOpacity onPress={() => fetchAttendanceRecord()}>
+      <Text style={{ fontSize: 22, fontWeight: '800', color: 'white', letterSpacing: 0.5 }}>
+        {selectedMonth.format('MMMM YYYY')}
+      </Text>
+    </TouchableOpacity>
+
+    <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', marginTop: 4 }}>
+      Attendance Overview
+    </Text>
+  </View>
+
+  <TouchableOpacity onPress={goNextMonth} style={{ padding: 8 }}>
+    <MaterialCommunityIcons name="chevron-right" size={28} color="white" />
+  </TouchableOpacity>
+
+</LinearGradient>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
-      {loading && <ActivityIndicator size="large" color="#CE5926" />}
+
 
 
         
@@ -496,21 +535,36 @@ const styles = StyleSheet.create({
   summaryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 10,
-    backgroundColor: '#CE5926',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    backgroundColor: '#0f766e',
+    borderBottomWidth: 0,
   },
   summaryCard: {
     alignItems: 'center',
-    padding: 8,
+    padding: 12,
+    flex: 1,
+    marginHorizontal: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  summaryCardInner: {
+    alignItems: 'center',
   },
   summaryType: {
-    fontWeight: 'bold',
-    fontSize: 14,
-    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 8,
+    letterSpacing: 0.3,
   },
   summaryCount: {
-    fontSize: 16,
+    fontSize: 24,
+    fontWeight: '800',
     color: '#fff',
+    letterSpacing: 0.5,
   },
 });
 

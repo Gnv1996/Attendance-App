@@ -45,7 +45,7 @@ const SplashScreen = ({navigation}) => {
         const userToken = await AsyncStorage.getItem('userToken');
         navigation.navigate(userToken ? 'Main' : 'Login');
       } catch (error) {
-        console.log('Login check error:', error);
+        // console.log('Login check error:', error);
         navigation.navigate('Login');
       } finally {
         setIsLoading(false);

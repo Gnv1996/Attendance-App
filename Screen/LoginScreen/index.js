@@ -16,6 +16,7 @@ import {
 import {BASE_URL} from '../../config';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PremiumLoader from '../../Src/Component';
 
 const {width} = Dimensions.get('window');
 
@@ -173,7 +174,7 @@ const LoginScreen = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar backgroundColor="#e89875" barStyle="light-content" />
-
+      <PremiumLoader visible={isLoading} message="Fetching Employees..." />
       {/* Background Design */}
       <View style={styles.backgroundShape1} />
       <View style={styles.backgroundShape2} />

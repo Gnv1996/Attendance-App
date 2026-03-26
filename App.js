@@ -23,7 +23,7 @@ const App = () => {
         const userToken = await AsyncStorage.getItem('userToken');
         setInitialRoute(userToken ? 'Main' : 'Login');
       } catch (error) {
-        console.log('Login check error:', error);
+        // console.log('Login check error:', error);
         setInitialRoute('Login');
       } finally {
         setIsLoading(false);
