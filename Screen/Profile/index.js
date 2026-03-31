@@ -105,6 +105,23 @@ const ProfileScreen = () => {
     { label: 'Attendance', value: '99%', icon: 'insights', color: '#10B981' },
   ];
 
+  const handleLogout = () => {
+    Alert.alert(
+      '🔒 Confirm Logout',
+      'Are you sure you want to end your session and log out?',
+      [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.multiRemove(['userToken', 'userData']);
+          navigation.replace('Login');
+        },
+      },
+    ]);
+  };
+
   const SettingItem = ({ icon, title, sub, color, onPress, isLast }) => (
     <TouchableOpacity 
         style={[styles.optionButton, !isLast && styles.borderBottom]} 
@@ -230,7 +247,7 @@ const ProfileScreen = () => {
               />
             </View>
             
-            <TouchableOpacity style={styles.logoutBtn}>
+            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
                 <Icon name="power-settings-new" size={20} color={COLORS.primary} />
                 <Text style={styles.logoutText}>Sign Out</Text>
             </TouchableOpacity>

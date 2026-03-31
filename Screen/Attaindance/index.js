@@ -76,7 +76,7 @@ const AttendanceScreen = () => {
       // formData.append('Month', selectedMonth.month() + 1);
       // formData.append('Year', selectedMonth.year());
       const payload = {
-        CrmEmpID: userData.crm_id, // 525 jaise value
+        CrmEmpID:userData.crm_id, // 525 jaise value
         Year: selectedMonth.year(), // 2025
         Month: selectedMonth.month() + 1 // 11 (Nov)
       };
@@ -94,7 +94,7 @@ const AttendanceScreen = () => {
         }
       );
 
-      // console.warn(payload,"See the payload")
+      console.warn(payload,"See the payload")
     
     
   

@@ -16,7 +16,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import PremiumLoader from '../../Src/Component';
 
 const { width } = Dimensions.get('window');
 
@@ -37,7 +36,7 @@ const COLORS = {
 const CompanyScreen = () => {
   const [loading, setLoading] = useState(false);
   const [employeeList, setEmployeeList] = useState([]);
-  const [employeeCount, setEmployeeCount] = useState(null);
+  const [employeeCount, setEmployeeCount] = useState(0);
   const [activeTab, setActiveTab] = useState('group');
   const [searchText, setSearchText] = useState('');
 
@@ -49,6 +48,7 @@ const CompanyScreen = () => {
     try {
       const token = await AsyncStorage.getItem('userToken');
       setLoading(true);
+      setSearchText(''); // Tab change par search clear karein
 
       const response = await fetch(
         'https://crm.itdoseinfo.com/api/CRMAttendance/EmployeeBind',
@@ -68,14 +68,15 @@ const CompanyScreen = () => {
       const result = await response.json();
 
       if (result.success) {
-        if (type === 'group') {
-          setEmployeeList(result.data);
-          setEmployeeCount(null);
-        } else {
+        // Humesha list update karein taaki search kaam kare
+        setEmployeeList(result.data);
+        if (type === 'company') {
           setEmployeeCount(result.data.length);
-          setEmployeeList([]);
+        } else {
+          setEmployeeCount(0);
         }
       } else {
+        setEmployeeList([]);
         Alert.alert('Error', 'Data not found');
       }
     } catch (error) {
@@ -88,7 +89,6 @@ const CompanyScreen = () => {
 
   const fetchGroupInfo = () => {
     setActiveTab('group');
-    setSearchText('');
     fetchData('2', 'group');
   };
 
@@ -97,13 +97,18 @@ const CompanyScreen = () => {
     fetchData('3', 'company');
   };
 
+  // Optimized Filter Logic for Name and ID
   const filteredList = useMemo(() => {
+    const term = searchText.toLowerCase().trim();
+    if (!term) return employeeList;
+
     return employeeList.filter(item =>
-      item.EmployeeName.toLowerCase().includes(searchText.toLowerCase())
+      item.EmployeeName.toLowerCase().includes(term) ||
+      item.Employee_ID.toString().toLowerCase().includes(term)
     );
   }, [searchText, employeeList]);
 
-  const renderEmployeeCard = ({ item, index }) => (
+  const renderEmployeeCard = ({ item }) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.9}>
       <View style={styles.cardLeft}>
         <View style={styles.avatarContainer}>
@@ -114,7 +119,7 @@ const CompanyScreen = () => {
         </View>
         <View style={styles.infoGroup}>
           <Text style={styles.employeeName}>{item.EmployeeName}</Text>
-          <Text style={styles.employeeId}>Employee ID: {item.Employee_ID}</Text>
+          <Text style={styles.employeeId}>ID: {item.Employee_ID}</Text>
         </View>
       </View>
       <View style={styles.cardRight}>
@@ -125,16 +130,15 @@ const CompanyScreen = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <PremiumLoader visible={loading} message="Fetching Employees..." />
+<StatusBar backgroundColor="#EA580C" barStyle="light-content" />
       
-      {/* PREMIUM HEADER */}
+      {/* HEADER */}
       <LinearGradient colors={COLORS.gradient} style={styles.header}>
         <SafeAreaView>
           <View style={styles.headerContent}>
             <View>
               <Text style={styles.headerSubtitle}>Directory</Text>
-              <Text style={styles.headerTitle}>Team Member</Text>
+              <Text style={styles.headerTitle}>Team Management</Text>
             </View>
             <TouchableOpacity style={styles.filterBtn}>
               <Icon name="tune" size={20} color="#FFF" />
@@ -144,7 +148,7 @@ const CompanyScreen = () => {
       </LinearGradient>
 
       <View style={styles.content}>
-        {/* SEGMENTED TAB SELECTOR */}
+        {/* TABS */}
         <View style={styles.tabWrapper}>
           <View style={styles.tabContainer}>
             <TouchableOpacity
@@ -152,7 +156,7 @@ const CompanyScreen = () => {
               onPress={fetchGroupInfo}
             >
               <Text style={[styles.tabText, activeTab === 'group' && styles.activeTabText]}>
-                Group Members
+                Group
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -160,7 +164,7 @@ const CompanyScreen = () => {
               onPress={fetchCompanyInfo}
             >
               <Text style={[styles.tabText, activeTab === 'company' && styles.activeTabText]}>
-                Company Summary
+                Summary
               </Text>
             </TouchableOpacity>
           </View>
@@ -169,51 +173,48 @@ const CompanyScreen = () => {
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loaderText}>Syncing directory...</Text>
+            <Text style={styles.loaderText}>Loading data...</Text>
           </View>
         ) : (
           <View style={{ flex: 1 }}>
-            {activeTab === 'group' ? (
-              <View style={{ flex: 1 }}>
-                {/* MODERN SEARCH BAR */}
-                <View style={styles.searchBox}>
-                  <Icon name="search" size={20} color={COLORS.slate400} />
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search by name..."
-                    placeholderTextColor={COLORS.slate400}
-                    value={searchText}
-                    onChangeText={setSearchText}
-                  />
-                  {searchText.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchText('')}>
-                      <Icon name="cancel" size={18} color={COLORS.slate400} />
-                    </TouchableOpacity>
-                  )}
-                </View>
+            {/* COMMON SEARCH BOX FOR BOTH TABS */}
+            <View style={styles.searchBox}>
+              <Icon name="search" size={20} color={COLORS.slate400} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={`Search ${activeTab} by name or ID...`}
+                placeholderTextColor={COLORS.slate400}
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+              {searchText.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchText('')}>
+                  <Icon name="cancel" size={18} color={COLORS.slate400} />
+                </TouchableOpacity>
+              )}
+            </View>
 
-                <FlatList
-                  data={filteredList}
-                  keyExtractor={(item) => item.Employee_ID.toString()}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.listContainer}
-                  renderItem={renderEmployeeCard}
-                  ListHeaderComponent={() => (
-                    <Text style={styles.resultsLabel}>
-                      Showing {filteredList.length} colleagues
-                    </Text>
-                  )}
-                  ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                      <Icon name="person-search" size={60} color={COLORS.slate400} opacity={0.3} />
-                      <Text style={styles.emptyTitle}>No Colleagues Found</Text>
-                      <Text style={styles.emptySub}>Try a different search term</Text>
-                    </View>
-                  }
-                />
-              </View>
+            {activeTab === 'group' || (activeTab === 'company' && searchText.length > 0) ? (
+              <FlatList
+                data={filteredList}
+                keyExtractor={(item) => item.Employee_ID.toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.listContainer}
+                renderItem={renderEmployeeCard}
+                ListHeaderComponent={() => (
+                  <Text style={styles.resultsLabel}>
+                    {filteredList.length} Results Found
+                  </Text>
+                )}
+                ListEmptyComponent={
+                  <View style={styles.emptyState}>
+                    <Icon name="person-search" size={60} color={COLORS.slate400} style={{ opacity: 0.3 }} />
+                    <Text style={styles.emptyTitle}>No Record Found</Text>
+                  </View>
+                }
+              />
             ) : (
-              /* COMPANY SUMMARY UI */
+              /* COMPANY SUMMARY STATS (When not searching) */
               <View style={styles.summaryContainer}>
                 <LinearGradient 
                   colors={['#6366F1', '#4F46E5']} 
@@ -222,17 +223,15 @@ const CompanyScreen = () => {
                 >
                   <View style={styles.statsRow}>
                     <View>
-                      <Text style={styles.statsNum}>{employeeCount || 0}</Text>
+                      <Text style={styles.statsNum}>{employeeCount}</Text>
                       <Text style={styles.statsLabel}>Total Workforce</Text>
                     </View>
-                    <View style={styles.statsIconBox}>
-                      <Icon name="groups" size={40} color="rgba(255,255,255,0.4)" />
-                    </View>
+                    <Icon name="groups" size={40} color="rgba(255,255,255,0.4)" />
                   </View>
                   <View style={styles.statsProgressTrack}>
                     <View style={styles.statsProgressFill} />
                   </View>
-                  <Text style={styles.statsFooterText}>+2% increase from last month</Text>
+                  <Text style={styles.statsFooterText}>Live organization data</Text>
                 </LinearGradient>
 
                 <View style={styles.infoGrid}>
@@ -240,15 +239,15 @@ const CompanyScreen = () => {
                     <View style={[styles.gridIcon, { backgroundColor: COLORS.success + '15' }]}>
                       <Icon name="verified-user" size={24} color={COLORS.success} />
                     </View>
-                    <Text style={styles.gridVal}>{Math.round(employeeCount * 0.85)}</Text>
-                    <Text style={styles.gridLab}>On-Duty</Text>
+                    <Text style={styles.gridVal}>{Math.round(employeeCount * 0.8)}</Text>
+                    <Text style={styles.gridLab}>Present</Text>
                   </View>
                   <View style={styles.gridCard}>
                     <View style={[styles.gridIcon, { backgroundColor: COLORS.primary + '15' }]}>
                       <Icon name="event-busy" size={24} color={COLORS.primary} />
                     </View>
-                    <Text style={styles.gridVal}>{Math.round(employeeCount * 0.15)}</Text>
-                    <Text style={styles.gridLab}>On-Leave</Text>
+                    <Text style={styles.gridVal}>{Math.round(employeeCount * 0.2)}</Text>
+                    <Text style={styles.gridLab}>Absent</Text>
                   </View>
                 </View>
               </View>
@@ -275,22 +274,23 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 10 : 25,
   },
   headerSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '600' },
-  headerTitle: { color: '#FFF', fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  filterBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { color: '#FFF', fontSize: 22, fontWeight: '800' },
+  filterBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
 
   content: { flex: 1, marginTop: -25 },
-  tabWrapper: { paddingHorizontal: 25, marginBottom: 20 },
+  tabWrapper: { paddingHorizontal: 25, marginBottom: 15 },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
-    padding: 6,
-    borderRadius: 18,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 3 }
-    })
+    padding: 5,
+    borderRadius: 15,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 14 },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12 },
   activeTab: { backgroundColor: COLORS.primary },
   tabText: { fontSize: 13, fontWeight: '700', color: COLORS.slate600 },
   activeTabText: { color: '#FFF' },
@@ -300,63 +300,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 25,
     backgroundColor: '#FFF',
-    borderRadius: 16,
+    borderRadius: 15,
     paddingHorizontal: 15,
-    height: 52,
+    height: 50,
     borderWidth: 1,
     borderColor: COLORS.border,
     marginBottom: 15,
   },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: COLORS.slate900, fontWeight: '500' },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 14, color: COLORS.slate900 },
 
-  listContainer: { paddingHorizontal: 25, paddingBottom: 40 },
-  resultsLabel: { fontSize: 12, fontWeight: '800', color: COLORS.slate400, marginBottom: 15, textTransform: 'uppercase', letterSpacing: 1 },
+  listContainer: { paddingHorizontal: 25, paddingBottom: 20 },
+  resultsLabel: { fontSize: 11, fontWeight: '800', color: COLORS.slate400, marginBottom: 10, textTransform: 'uppercase' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FFF',
-    padding: 15,
-    borderRadius: 20,
-    marginBottom: 12,
+    padding: 12,
+    borderRadius: 18,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   cardLeft: { flexDirection: 'row', alignItems: 'center' },
   avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: COLORS.primary + '15',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: { color: COLORS.primary, fontSize: 18, fontWeight: '800' },
-  onlineBadge: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, backgroundColor: COLORS.success, borderWidth: 3, borderColor: '#FFF' },
-  infoGroup: { marginLeft: 15 },
-  employeeName: { fontSize: 16, fontWeight: '700', color: COLORS.slate900 },
-  employeeId: { fontSize: 12, color: COLORS.slate400, marginTop: 2, fontWeight: '600' },
+  avatarText: { color: COLORS.primary, fontSize: 16, fontWeight: '800' },
+  onlineBadge: { position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.success, borderWidth: 2, borderColor: '#FFF' },
+  infoGroup: { marginLeft: 12 },
+  employeeName: { fontSize: 14, fontWeight: '700', color: COLORS.slate900 },
+  employeeId: { fontSize: 11, color: COLORS.slate400, marginTop: 2 },
 
-  summaryContainer: { paddingHorizontal: 25, flex: 1 },
-  statsCard: { padding: 25, borderRadius: 28, marginBottom: 20 },
+  summaryContainer: { paddingHorizontal: 25 },
+  statsCard: { padding: 20, borderRadius: 25, marginBottom: 15 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statsNum: { fontSize: 36, fontWeight: '800', color: '#FFF' },
-  statsLabel: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
-  statsProgressTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, marginVertical: 20 },
-  statsProgressFill: { width: '70%', height: '100%', backgroundColor: '#FFF', borderRadius: 3 },
-  statsFooterText: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '700' },
+  statsNum: { fontSize: 32, fontWeight: '800', color: '#FFF' },
+  statsLabel: { fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  statsProgressTrack: { height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2, marginVertical: 15 },
+  statsProgressFill: { width: '80%', height: '100%', backgroundColor: '#FFF', borderRadius: 2 },
+  statsFooterText: { color: 'rgba(255,255,255,0.6)', fontSize: 10 },
 
   infoGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  gridCard: { width: '48%', backgroundColor: '#FFF', padding: 20, borderRadius: 24, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
-  gridIcon: { width: 50, height: 50, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  gridVal: { fontSize: 24, fontWeight: '800', color: COLORS.slate900 },
-  gridLab: { fontSize: 12, color: COLORS.slate400, fontWeight: '700', marginTop: 4 },
+  gridCard: { width: '48%', backgroundColor: '#FFF', padding: 15, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  gridIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  gridVal: { fontSize: 20, fontWeight: '800', color: COLORS.slate900 },
+  gridLab: { fontSize: 11, color: COLORS.slate400, fontWeight: '600' },
 
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loaderText: { marginTop: 15, color: COLORS.slate600, fontWeight: '600' },
-  emptyState: { alignItems: 'center', marginTop: 60 },
-  emptyTitle: { fontSize: 18, fontWeight: '800', color: COLORS.slate900, marginTop: 15 },
-  emptySub: { fontSize: 14, color: COLORS.slate400, marginTop: 5 }
+  loaderText: { marginTop: 10, color: COLORS.slate600, fontSize: 13 },
+  emptyState: { alignItems: 'center', marginTop: 40 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: COLORS.slate400, marginTop: 10 }
 });
 
 export default CompanyScreen;

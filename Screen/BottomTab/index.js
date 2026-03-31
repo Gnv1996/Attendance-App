@@ -155,7 +155,10 @@ const MainDrawer = () => {
   }, []);
 
   const handleLogout = () => {
-    Alert.alert('Session Exit', 'Are you sure you want to end your current session?', [
+    Alert.alert(
+      '🔒 Confirm Logout',
+      'Are you sure you want to end your session and log out?',
+      [
       {text: 'Cancel', style: 'cancel'},
       {
         text: 'Sign Out',
@@ -212,10 +215,10 @@ const styles = StyleSheet.create({
   avatarWrapper: { marginBottom: 15 },
   imageInnerBorder: {
     padding: 3,
-    borderRadius: 50,
+    borderRadius: 80,
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
-  profileImage: {width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: '#FFF'},
+  profileImage: {width: 160, height: 160, borderRadius: 80, borderWidth: 4, borderColor: '#FFF'},
   activeSpot: {
     position: 'absolute',
     bottom: 8,

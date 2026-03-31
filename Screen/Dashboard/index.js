@@ -496,120 +496,122 @@ const AttendanceDashboard = () => {
       </LinearGradient>
 
       <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}>
-      {isSunday() ? (
-          <LinearGradient
-            colors={['#0369A1', '#0891B2', '#06B6D4']}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={[
-              styles.card,
-              {
-                paddingVertical: 48,
-                paddingHorizontal: 24,
-                alignItems: 'center',
-                borderRadius: 28,
-                marginBottom: 20,
-                shadowColor: '#000',
-                shadowOpacity: 0.15,
-                shadowOffset: {width: 0, height: 8},
-                shadowRadius: 16,
-                elevation: 10,
-              },
-            ]}>
-            {/* Animated Emoji */}
-            <Animated.View style={{transform: [{scale: scaleAnim}], marginBottom: 16}}>
-              <Text style={{fontSize: 80}}>🌊✨</Text>
-            </Animated.View>
+  style={styles.scrollContainer}
+  showsVerticalScrollIndicator={false}>
 
-            <Text
-              style={{
-                fontSize: 32,
-                fontWeight: '900',
-                color: '#fff',
-                marginTop: 8,
-                textAlign: 'center',
-                letterSpacing: 0.5,
-              }}>
-              Sunday Recharge
-            </Text>
+  {isSunday() ? (
+   <LinearGradient
+   colors={['#0369A1', '#0891B2', '#06B6D4']}
+   start={{x: 0, y: 0}}
+   end={{x: 1, y: 1}}
+   style={[
+     styles.card,
+     {
+       paddingVertical: 48,
+       paddingHorizontal: 24,
+       alignItems: 'center',
+       borderRadius: 28,
+       marginBottom: 20,
+       shadowColor: '#000',
+       shadowOpacity: 0.15,
+       shadowOffset: {width: 0, height: 8},
+       shadowRadius: 16,
+       elevation: 10,
+     },
+   ]}>
+   {/* Animated Emoji */}
+   <Animated.View style={{transform: [{scale: scaleAnim}], marginBottom: 16}}>
+     <Text style={{fontSize: 80}}>🌊✨</Text>
+   </Animated.View>
 
-            <Text
-              style={{
-                fontSize: 16,
-                color: 'rgba(255,255,255,0.95)',
-                marginTop: 12,
-                textAlign: 'center',
-                maxWidth: 300,
-                lineHeight: 24,
-                fontWeight: '500',
-              }}>
-              Time to unwind and recharge your batteries{'\n'}You&apos;ve earned it! 🎉
-            </Text>
+   <Text
+     style={{
+       fontSize: 32,
+       fontWeight: '900',
+       color: '#fff',
+       marginTop: 8,
+       textAlign: 'center',
+       letterSpacing: 0.5,
+     }}>
+     Sunday Recharge
+   </Text>
 
-            <View
-              style={{
-                marginTop: 28,
-                flexDirection: 'row',
-                backgroundColor: 'rgba(255,255,255,0.25)',
-                paddingHorizontal: 28,
-                paddingVertical: 14,
-                borderRadius: 40,
-                borderWidth: 2,
-                borderColor: 'rgba(255,255,255,0.4)',
-                alignItems: 'center',
-                shadowColor: '#000',
-                shadowOpacity: 0.2,
-                shadowOffset: {width: 0, height: 4},
-                shadowRadius: 8,
-                elevation: 5,
-              }}>
-              <Text style={{fontSize: 16, marginRight: 8}}>☀️</Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: '800',
-                  color: '#fff',
-                  letterSpacing: 1,
-                }}>
-                REST DAY
-              </Text>
-            </View>
+   <Text
+     style={{
+       fontSize: 16,
+       color: 'rgba(255,255,255,0.95)',
+       marginTop: 12,
+       textAlign: 'center',
+       maxWidth: 300,
+       lineHeight: 24,
+       fontWeight: '500',
+     }}>
+     Time to unwind and recharge your batteries{'\n'}You&apos;ve earned it! 🎉
+   </Text>
 
-            <View style={{marginTop: 24, flexDirection: 'row', gap: 16}}>
-              <View style={{
-                flex: 1,
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                paddingVertical: 12,
-                paddingHorizontal: 14,
-                borderRadius: 16,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.2)',
-              }}>
-                <Text style={{fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>No Check-in</Text>
-                <Text style={{fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4}}>Required</Text>
-              </View>
-              <View style={{
-                flex: 1,
-                backgroundColor: 'rgba(255,255,255,0.15)',
-                paddingVertical: 12,
-                paddingHorizontal: 14,
-                borderRadius: 16,
-                alignItems: 'center',
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.2)',
-              }}>
-                <Text style={{fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>Enjoy Your</Text>
-                <Text style={{fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4}}>Weekend</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        ) : (
-          <>
-            {/* Working Hours Card */}
-            <View style={styles.card}>
+   <View
+     style={{
+       marginTop: 28,
+       flexDirection: 'row',
+       backgroundColor: 'rgba(255,255,255,0.25)',
+       paddingHorizontal: 28,
+       paddingVertical: 14,
+       borderRadius: 40,
+       borderWidth: 2,
+       borderColor: 'rgba(255,255,255,0.4)',
+       alignItems: 'center',
+       shadowColor: '#000',
+       shadowOpacity: 0.2,
+       shadowOffset: {width: 0, height: 4},
+       shadowRadius: 8,
+       elevation: 5,
+     }}>
+     <Text style={{fontSize: 16, marginRight: 8}}>☀️</Text>
+     <Text
+       style={{
+         fontSize: 14,
+         fontWeight: '800',
+         color: '#fff',
+         letterSpacing: 1,
+       }}>
+       REST DAY
+     </Text>
+   </View>
+
+   <View style={{marginTop: 24, flexDirection: 'row', gap: 16}}>
+     <View style={{
+       flex: 1,
+       backgroundColor: 'rgba(255,255,255,0.15)',
+       paddingVertical: 12,
+       paddingHorizontal: 14,
+       borderRadius: 16,
+       alignItems: 'center',
+       borderWidth: 1,
+       borderColor: 'rgba(255,255,255,0.2)',
+     }}>
+       <Text style={{fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>No Check-in</Text>
+       <Text style={{fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4}}>Required</Text>
+     </View>
+     <View style={{
+       flex: 1,
+       backgroundColor: 'rgba(255,255,255,0.15)',
+       paddingVertical: 12,
+       paddingHorizontal: 14,
+       borderRadius: 16,
+       alignItems: 'center',
+       borderWidth: 1,
+       borderColor: 'rgba(255,255,255,0.2)',
+     }}>
+       <Text style={{fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600'}}>Enjoy Your</Text>
+       <Text style={{fontSize: 18, fontWeight: '800', color: '#fff', marginTop: 4}}>Weekend</Text>
+     </View>
+   </View>
+ </LinearGradient>
+  ) : (
+    <>
+ 
+      {/* Working Hours Card */}
+      <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View>
                   <Text style={styles.cardTitle}>⏰ Today's Working Hours</Text>
@@ -672,8 +674,9 @@ const AttendanceDashboard = () => {
               </View>
             </View>
 
-            {/* Schedule Card */}
-            <View style={styles.card}>
+
+      {/* Schedule */}
+      <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>📅 Today's Schedule</Text>
               </View>
@@ -698,10 +701,12 @@ const AttendanceDashboard = () => {
                 </View>
               </View>
             </View>
-          </>
-        )}
+          
+        
 
-        <View style={styles.card}>
+
+      {/* Break Summary */}
+      <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>☕ Break Summary</Text>
             <TouchableOpacity
@@ -755,7 +760,8 @@ const AttendanceDashboard = () => {
           )}
         </View>
 
-        <View style={styles.statsRow}>
+      {/* Stats */}
+      <View style={styles.statsRow}>
           <LinearGradient
             colors={['#CE5926', '#E67E50']}
             start={{x: 0, y: 0}}
@@ -795,8 +801,12 @@ const AttendanceDashboard = () => {
           </Text>
         </View>
 
-        <View style={{height: 30}} />
-      </ScrollView>
+
+    </>
+  )}
+
+  <View style={{height: 30}} />
+</ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalBackdrop}>
