@@ -124,10 +124,7 @@ const AttendanceDashboard = () => {
       }
     } catch (error) {
       console.error('❌ API Call Failed:', error);
-      Alert.alert(
-        'Error',
-        'Unable to connect to server. Please try again later.',
-      );
+     
     } finally {
       setLoading(false);
     }
@@ -157,12 +154,24 @@ const AttendanceDashboard = () => {
         },
       );
 
+      if (response.status === 401) {
+        Alert.alert('⏳ Session Expired ', 'Please login again');
+      
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      
+        return; // 🚨 important
+      }
+      
+
       // 🔥 ALWAYS parse response
       const res = await response.json();
 
       // ❌ Unauthorized / server-side failure
       if (!response.ok) {
-        Alert.alert('Error', res?.message || 'Unable to fetch break records');
+        Alert.alert('Oops! 😕', res?.message || 'Something went wrong. Please try again');
         return;
       }
 
@@ -172,8 +181,8 @@ const AttendanceDashboard = () => {
         setEmpCode(null);
 
         Alert.alert(
-          'No Records',
-          res.message || 'No break records found for this date',
+          'No Records 📭',
+          res?.message || 'No break records found for this date',
         );
 
         // optional: clear local cache
