@@ -33,7 +33,7 @@ const COLORS = {
   gradient: ['#F97316', '#FB923C'],
 };
 
-const CompanyScreen = () => {
+const CompanyScreen = ({navigation}) => {
   const [loading, setLoading] = useState(false);
   const [employeeList, setEmployeeList] = useState([]);
   const [employeeCount, setEmployeeCount] = useState(0);
@@ -136,13 +136,14 @@ const CompanyScreen = () => {
       <LinearGradient colors={COLORS.gradient} style={styles.header}>
         <SafeAreaView>
           <View style={styles.headerContent}>
-            <View>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => navigation.openDrawer()}>
+              <Icon name="tune" size={20} color="#FFF" />
+            </TouchableOpacity>
+            <View style={{marginLeft:30}}>
               <Text style={styles.headerSubtitle}>Directory</Text>
               <Text style={styles.headerTitle}>Team Management</Text>
             </View>
-            <TouchableOpacity style={styles.filterBtn}>
-              <Icon name="tune" size={20} color="#FFF" />
-            </TouchableOpacity>
+          
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -269,7 +270,6 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: Platform.OS === 'ios' ? 10 : 25,
   },

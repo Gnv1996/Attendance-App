@@ -19,6 +19,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useEmployee } from '../Context/EmployeeContext';
 import { BASE_URL } from '../../config';
 import PremiumLoader from '../../Src/Component';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { width } = Dimensions.get('window');
 
@@ -153,8 +154,8 @@ const ProfileScreen = () => {
             <View style={styles.headerInternal}>
               <View style={styles.topActions}>
                 {/* <Text style={styles.headerTitle}>Profile</Text> */}
-                <TouchableOpacity style={styles.notifBtn}>
-                  <Icon name="notifications-none" size={24} color="#FFF" />
+                <TouchableOpacity style={styles.notifBtn}    onPress={() => navigation.openDrawer()}>
+                <MaterialCommunityIcons name="menu" size={24} color="#fff" style={styles.clockIcon} />
                 </TouchableOpacity>
               </View>
 

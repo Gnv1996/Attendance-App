@@ -200,10 +200,22 @@ const MainDrawer = () => {
           return <MaterialCommunityIcons name={icons[route.name]} size={22} color={color} />;
         },
       })}>
-      <Drawer.Screen name="Dashboard" component={DashboardScreen} />
-      <Drawer.Screen name="Profile" component={ProfileScreen} />
-      <Drawer.Screen name="Attendance" component={AttendanceScreen} />
-      {userData?.crm_id === 525 && <Drawer.Screen name="Info" component={CompanyScreen} />}
+   <Drawer.Screen
+  name="Dashboard"
+  component={DashboardScreen}
+  options={{
+    headerShown: false,
+  }}
+/>
+      <Drawer.Screen name="Profile" component={ProfileScreen}  options={{
+    headerShown: false,
+  }}/>
+      <Drawer.Screen name="Attendance" component={AttendanceScreen}  options={{
+    headerShown: false,
+  }}/>
+      {userData?.crm_id === 525 && <Drawer.Screen name="Info" component={CompanyScreen} options={{
+    headerShown: false,
+  }}/>}
     </Drawer.Navigator>
   );
 };

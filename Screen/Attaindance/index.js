@@ -39,7 +39,7 @@ const LeaveSummaryHeader = ({leaves}) => {
   );
 };
 
-const AttendanceScreen = () => {
+const AttendanceScreen = ({navigation}) => {
   const [selectedMonth, setSelectedMonth] = useState(moment());
   const [attendanceData, setAttendanceData] = useState({});
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -391,61 +391,49 @@ const AttendanceScreen = () => {
     <View style={{flex: 1, backgroundColor: '#f0f4f8'}}>
       <StatusBar backgroundColor="#EA580C" barStyle="light-content" />
       <PremiumLoader visible={loading} message="Fetching Employees..." />
-      <LeaveSummaryHeader leaves={leaveSummary} />
-      <LinearGradient
-        colors={['#F97316', '#EA580C', '#C2410C']}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingHorizontal: 20,
-          paddingTop: 16,
-          paddingBottom: 24,
-          borderBottomLeftRadius: 30,
-          borderBottomRightRadius: 30,
-          shadowColor: '#000',
-          shadowOpacity: 0.15,
-          shadowOffset: {width: 0, height: 8},
-          shadowRadius: 16,
-          elevation: 10,
-        }}>
-        <TouchableOpacity onPress={goPrevMonth} style={{padding: 8}}>
-          <MaterialCommunityIcons name="chevron-left" size={28} color="white" />
-        </TouchableOpacity>
+    {/* === ATTRACTIVE HEADER === */}
+{/* === ATTRACTIVE HEADER === */}
+<LinearGradient
+  colors={['#F97316', '#EA580C', '#C2410C']}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 0 }}
+  style={styles.headerGradient}>
 
-        <View style={{alignItems: 'center'}}>
-          <TouchableOpacity onPress={() => fetchAttendanceRecord()}>
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: '800',
-                color: 'white',
-                letterSpacing: 0.5,
-              }}>
-              {selectedMonth.format('MMMM YYYY')}
-            </Text>
-          </TouchableOpacity>
+  {/* Top Navigation Bar */}
+  <View style={styles.headerTop}>
+  <TouchableOpacity
+    onPress={() => navigation.openDrawer()}
+    style={styles.menuButton}>
+    <MaterialCommunityIcons name="menu" size={28} color="#fff" />
+  </TouchableOpacity>
 
-          <Text
-            style={{
-              fontSize: 13,
-              color: 'rgba(255,255,255,0.9)',
-              marginTop: 4,
-            }}>
-            Attendance Overview
-          </Text>
-        </View>
+  <View style={styles.monthContainer}>
+    <View style={styles.monthRow}>
+      <TouchableOpacity onPress={goPrevMonth} style={styles.arrowButton}>
+        <MaterialCommunityIcons name="chevron-left" size={26} color="#fff" />
+      </TouchableOpacity>
 
-        <TouchableOpacity onPress={goNextMonth} style={{padding: 8}}>
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={28}
-            color="white"
-          />
-        </TouchableOpacity>
-      </LinearGradient>
+      <Text style={styles.monthTitle}>
+        {selectedMonth.format('MMMM YYYY')}
+      </Text>
+
+      <TouchableOpacity onPress={goNextMonth} style={styles.arrowButton}>
+        <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
+      </TouchableOpacity>
+    </View>
+
+    <Text style={styles.subtitle}>Attendance Overview</Text>
+  </View>
+</View>
+
+  {/* Leave Summary */}
+  <LeaveSummaryHeader leaves={leaveSummary} />
+
+</LinearGradient>
+    
+
+
+ 
 
       <ScrollView contentContainerStyle={{paddingBottom: 40}}>
         {getDaysInMonth().map(day => {
@@ -714,6 +702,83 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
     letterSpacing: 0.5,
+  },
+
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 25,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 18,
+  },
+  
+  menuButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginTop:-40
+  },
+  
+  monthContainer: {
+    flex: 1,
+    alignItems: 'flex-end',   // Right end
+    // marginLeft: 16,            // Menu se gap
+  },
+  
+  monthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  monthTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 3,
+  },
+
+  subtitle: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13.5,
+    fontWeight: '500',
+    marginTop: 4,
+    marginRight:30
+  },
+
+  arrowButton: {
+    padding: 6,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+
+  rightIconContainer: {
+    padding: 8,
+  },
+
+  // Leave Summary Styles (already good, keeping them)
+  summaryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 20,
+    marginHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
 });
 
