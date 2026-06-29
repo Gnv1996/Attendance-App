@@ -325,6 +325,15 @@ const AttendanceDashboard = () => {
     }).format(date);
   };
 
+  const formatCurrentTime = date => {
+    return date.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
   const parseWorkingHours = timeString => {
     if (!timeString) return 0;
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -480,57 +489,52 @@ const AttendanceDashboard = () => {
   end={{x: 1, y: 1}}
   style={styles.headerGradient}>
 
-  <View style={styles.profileSection}>
-
-    {/* Left Menu */}
+  {/* Top Row */}
+  <View style={styles.topRow}>
     <TouchableOpacity
-      style={styles.menuButton}
-      activeOpacity={0.7}
+      style={styles.menuBtn}
       onPress={() => navigation.openDrawer()}>
-      <MaterialCommunityIcons
-        name="menu"
-        size={28}
-        color="#fff"
-      />
+      <MaterialCommunityIcons name="menu" size={26} color="#fff" />
     </TouchableOpacity>
 
-    {/* Right Profile */}
-    <View style={styles.rightSection}>
+    <View style={styles.liveTime}>
+  <MaterialCommunityIcons
+    name="timer-outline"
+    size={28}
+    color="#4ADE80"
+  />
 
-      <View style={styles.avatarContainer}>
-        <Text style={styles.avatarText}>👋</Text>
-      </View>
+  <Text style={styles.liveTimeText}>
+    {formatCurrentTime(currentTime)}
+  </Text>
+</View>
+  </View>
 
-      <TouchableOpacity
-        style={styles.userClickableArea}
-        activeOpacity={0.7}
-        onPress={fetchAttendanceData}>
-
-        <Text style={styles.greetingText}>
-          {greeting || 'Welcome'}
-        </Text>
-
-        <Text
-          style={styles.userNameText}
-          numberOfLines={1}>
-          {userData?.name || 'Guest User'}
-        </Text>
-
-        <View style={styles.dateRow}>
-          <MaterialCommunityIcons
-            name="calendar-blank"
-            size={13}
-            color="rgba(255,255,255,0.85)"
-          />
-          <Text style={styles.dateText}>
-            {formatDate(currentTime)}
-          </Text>
-        </View>
-
-      </TouchableOpacity>
-
+  {/* User Card */}
+  <View style={styles.userCard}>
+    <View style={styles.avatar}>
+      <Text style={{fontSize: 30}}>👋</Text>
     </View>
 
+    <View style={{flex: 1}}>
+      <Text style={styles.greeting}>{greeting}</Text>
+
+      <Text style={styles.name}>
+        {userData?.name}
+      </Text>
+
+      <View style={styles.dateRow}>
+        <MaterialCommunityIcons
+          name="calendar-month"
+          color="#FFD54F"
+          size={15}
+        />
+
+        <Text style={styles.date}>
+          {formatDate(currentTime)}
+        </Text>
+      </View>
+    </View>
   </View>
 
 </LinearGradient>
@@ -981,9 +985,9 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 24,
     paddingHorizontal: 20,
-    borderBottomLeftRadius: 28, // ज़्यादा मॉडर्न कर्व्ड कॉर्नर्स
+    borderBottomLeftRadius: 28, 
     borderBottomRightRadius: 28,
-    // हल्का शैडो इफ़ेक्ट
+ 
     shadowColor: '#C2410C',
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.3,
@@ -995,10 +999,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 24, // थोड़ा गैप बढ़ाया ताकि स्क्रीन क्लीन दिखे
+    marginBottom: 24,
   },
   menuButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // मेनू बटन के पीछे सॉफ्ट सर्कल
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', 
     padding: 8,
     borderRadius: 12,
   },
@@ -1028,20 +1032,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  
+
   menuButton: {
     width: 44,
     height: 44,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    marginTop:-40
+    marginTop: -40,
   },
-  
+
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   avatarContainer: {
     width: 52,
     height: 52,
@@ -1053,15 +1057,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
   },
-  
+
   avatarText: {
     fontSize: 26,
   },
-  
+
   userClickableArea: {
     alignItems: 'flex-end',
   },
-  
+
   greetingText: {
     fontSize: 12,
     fontWeight: '600',
@@ -1069,21 +1073,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  
+
   userNameText: {
     fontSize: 21,
     fontWeight: '800',
     color: '#fff',
     marginTop: 2,
   },
-  
+
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     marginTop: 4,
   },
-  
+
   dateText: {
     marginLeft: 4,
     fontSize: 12,
@@ -1482,6 +1486,194 @@ const styles = StyleSheet.create({
     paddingVertical: 18, // thoda sa hi bada
     flex: 1.9, // default shayad 1 hoga, isko thoda zyada de do
   },
+  infoContainer: {
+    marginTop: 12,
+  },
+
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  infoText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  timeChip: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+
+  timeText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    marginHorizontal: 8,
+    letterSpacing: 1,
+  },
+
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+    marginRight: 5,
+  },
+
+  liveText: {
+    color: '#22C55E',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  headerGradient: {
+  paddingTop: 18,
+  paddingHorizontal: 22,
+  paddingBottom: 30,
+
+  borderBottomLeftRadius: 35,
+  borderBottomRightRadius: 35,
+
+  elevation: 12,
+},
+
+topRow:{
+  flexDirection:'row',
+  justifyContent:'space-between',
+  alignItems:'center',
+  marginBottom:28,
+},
+
+menuBtn:{
+  width:46,
+  height:46,
+  borderRadius:23,
+  justifyContent:'center',
+  alignItems:'center',
+
+  backgroundColor:'rgba(255,255,255,.18)',
+},
+
+headerGradient: {
+  paddingTop: 18,
+  paddingHorizontal: 22,
+  paddingBottom: 30,
+
+  borderBottomLeftRadius: 35,
+  borderBottomRightRadius: 35,
+
+  elevation: 12,
+},
+
+topRow:{
+  flexDirection:'row',
+  justifyContent:'space-between',
+  alignItems:'center',
+  marginBottom:28,
+},
+
+menuBtn:{
+  width:46,
+  height:46,
+  borderRadius:23,
+  justifyContent:'center',
+  alignItems:'center',
+
+  backgroundColor:'rgba(255,255,255,.18)',
+},
+
+liveTime: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: 'rgba(255,255,255,0.18)',
+  paddingHorizontal: 14,
+  paddingVertical: 8,
+  borderRadius: 30,
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.25)',
+},
+
+liveTimeText: {
+  color: '#fff',
+  fontSize: 15,
+  fontWeight: '700',
+  marginLeft: 8,
+  fontVariant: ['tabular-nums'],
+  letterSpacing: 0.8,
+},
+
+liveDot:{
+  width:9,
+  height:9,
+  borderRadius:5,
+  backgroundColor:'#00FF7F',
+},
+
+userCard:{
+  flexDirection:'row',
+  alignItems:'center',
+},
+
+avatar:{
+  width:68,
+  height:68,
+  borderRadius:34,
+
+  justifyContent:'center',
+  alignItems:'center',
+
+  backgroundColor:'rgba(255,255,255,.15)',
+
+  borderWidth:2,
+  borderColor:'rgba(255,255,255,.25)',
+
+  marginRight:16,
+},
+
+greeting:{
+  color:'rgba(255,255,255,.8)',
+  fontSize:12,
+  letterSpacing:1.5,
+  fontWeight:'700',
+  textTransform:'uppercase',
+},
+
+name:{
+  color:'#fff',
+  fontSize:25,
+  fontWeight:'900',
+  marginTop:3,
+},
+
+dateRow:{
+  flexDirection:'row',
+  alignItems:'center',
+  marginTop:10,
+},
+
+date:{
+  color:'rgba(255,255,255,.92)',
+  marginLeft:6,
+  fontSize:13,
+  fontWeight:'500',
+},
 });
 
 export default AttendanceDashboard;
