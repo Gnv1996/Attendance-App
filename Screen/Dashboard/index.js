@@ -12,7 +12,6 @@ import {
   Modal,
   TextInput,
   FlatList,
-  ActivityIndicator,
   BackHandler,
   Animated,
 } from 'react-native';
@@ -21,16 +20,14 @@ import {Calendar} from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {BASE_URL} from '../../config';
 import LinearGradient from 'react-native-linear-gradient';
-import axios from 'axios';
 import {useEmployee} from '../Context/EmployeeContext';
 import PremiumLoader from '../../Src/Component';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const {width} = Dimensions.get('window');
-
 const AttendanceDashboard = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const navigation = useNavigation();
 
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [greeting, setGreeting] = useState('');
   const [userData, setUserData] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,6 +42,9 @@ const AttendanceDashboard = () => {
   const [checkoutTime, setCheckoutTime] = useState(null);
   const [NoRecord, setNoRecord] = useState(null);
 
+  // 🔥 Naya state jo calendar API se aaj ka status check karega (WO, CL, SL, etc.)
+  const [todayStatus, setTodayStatus] = useState(null);
+
   const [scaleAnim] = useState(new Animated.Value(1));
   const {setEmpCode} = useEmployee();
   const BREAKS_LOCAL_KEY = 'EMPLOYEE_BREAKS';
@@ -53,8 +53,8 @@ const AttendanceDashboard = () => {
     const fetchUserData = async () => {
       try {
         const userDataString = await AsyncStorage.getItem('userData');
-        const userData = userDataString ? JSON.parse(userDataString) : null;
-        setUserData(userData);
+        const parsedData = userDataString ? JSON.parse(userDataString) : null;
+        setUserData(parsedData);
       } catch (error) {
         console.log('❌ Error fetching user data:', error);
       }
@@ -76,7 +76,65 @@ const AttendanceDashboard = () => {
     }, []),
   );
 
-  const fetchAttendanceData = async () => {
+  // 🔥 Calendar API jo aaj ka leave/off status batayegi
+  const fetchTodayLeaveOrHolidayStatus = useCallback(async () => {
+    if (!userData) return;
+
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentDay = now.getDate(); // 1-31
+
+      const payload = {
+        CrmEmpID: userData.crm_id,
+        Year: currentYear,
+        Month: currentMonth,
+      };
+
+      const response = await fetch(
+        `${BASE_URL}/CRMAttendance/LeaveRequest_BindCalender`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (response.status === 401) return;
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const dayRecords = result.data[1] || [];
+        const todayRecord = dayRecords.find(entry => entry.Day === currentDay);
+
+        if (todayRecord) {
+          const holidayValue = todayRecord.Holiday;
+          const hasLeave = todayRecord.HasLeave?.toString()?.toUpperCase();
+
+          if (['CL', 'SL', 'EL', 'PL', 'RT', 'WO'].includes(holidayValue)) {
+            setTodayStatus(holidayValue);
+          } else if (holidayValue === 'OL' || hasLeave === 'OL') {
+            setTodayStatus('OL');
+          } else if (holidayValue && !holidayValue.startsWith('Login:')) {
+            setTodayStatus(holidayValue);
+          } else {
+            setTodayStatus(null);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Calendar API Error:', error);
+    }
+  }, [userData]);
+
+  const fetchAttendanceData = useCallback(async () => {
     if (!userData) return;
 
     try {
@@ -99,38 +157,32 @@ const AttendanceDashboard = () => {
         },
       );
 
-      // 🔥 ALWAYS parse response first
       const data = await response.json();
 
-      // 🔒 Session expired
       if (response.status === 401) {
         Alert.alert('Session expired', 'Please login again');
         navigation.reset({index: 0, routes: [{name: 'Login'}]});
         return;
       }
 
-      // ❌ Actual server error
-
-      // ⚠️ No login/logout found (NOT an error)
       if (data.success === false) {
-        setAttendanceRecords([]); // clear old data
-
+        setAttendanceRecords([]);
         setNoRecord(data?.message || 'Failed to fetch attendance data');
         return;
       }
 
-      // ✅ Success with data
       if (data.success && data.data) {
         setAttendanceRecords(data.data);
+        setNoRecord(null);
       }
     } catch (error) {
       console.error('❌ API Call Failed:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [userData, navigation]);
 
-  const fetchBreakRecords = async () => {
+  const fetchBreakRecords = useCallback(async () => {
     if (!userData) return;
 
     try {
@@ -148,7 +200,6 @@ const AttendanceDashboard = () => {
           headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            // Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         },
@@ -156,19 +207,15 @@ const AttendanceDashboard = () => {
 
       if (response.status === 401) {
         Alert.alert('⏳ Session Expired ', 'Please login again');
-
         navigation.reset({
           index: 0,
           routes: [{name: 'Login'}],
         });
-
-        return; // 🚨 important
+        return;
       }
 
-      // 🔥 ALWAYS parse response
       const res = await response.json();
 
-      // ❌ Unauthorized / server-side failure
       if (!response.ok) {
         Alert.alert(
           'Oops! 😕',
@@ -177,7 +224,6 @@ const AttendanceDashboard = () => {
         return;
       }
 
-      // ⚠️ No transactions found (NOT an error)
       if (res.success === false) {
         setBreakRecords({transactions: [], breaks: []});
         setEmpCode(null);
@@ -187,12 +233,10 @@ const AttendanceDashboard = () => {
           res?.message || 'No break records found for this date',
         );
 
-        // optional: clear local cache
         await AsyncStorage.removeItem(BREAKS_LOCAL_KEY);
         return;
       }
 
-      // ✅ Success with data
       if (res.success && res.data) {
         setBreakRecords(res.data);
         setEmpCode(res.data.transactions?.[0]?.empcode || null);
@@ -204,8 +248,6 @@ const AttendanceDashboard = () => {
             transactions: res.data.transactions,
           }),
         );
-
-        loadBreaksFromLocal();
       }
     } catch (error) {
       console.error('❌ API Error:', error);
@@ -216,25 +258,30 @@ const AttendanceDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userData, selectedDate, navigation, setEmpCode]);
 
-  // Attendance
+  // Attendance & Calendar status polling
   useFocusEffect(
     useCallback(() => {
       if (!userData) return;
       fetchAttendanceData();
-      const id = setInterval(fetchAttendanceData, 60000);
+      fetchTodayLeaveOrHolidayStatus();
+      const id = setInterval(() => {
+        fetchAttendanceData();
+        fetchTodayLeaveOrHolidayStatus();
+      }, 60000);
       return () => clearInterval(id);
-    }, [userData]),
+    }, [userData, fetchAttendanceData, fetchTodayLeaveOrHolidayStatus]),
   );
 
-  // Breaks
+  // Breaks polling
   useFocusEffect(
     useCallback(() => {
+      if (!userData) return;
       fetchBreakRecords();
       const id = setInterval(fetchBreakRecords, 60000);
       return () => clearInterval(id);
-    }, [userData, selectedDate]),
+    }, [userData, selectedDate, fetchBreakRecords]),
   );
 
   const isAfter8PM = () => {
@@ -242,17 +289,13 @@ const AttendanceDashboard = () => {
     return now.getHours() >= 20;
   };
 
-  const loadBreaksFromLocal = async () => {
+  const loadBreaksFromLocal = useCallback(async () => {
     try {
       const stored = await AsyncStorage.getItem(BREAKS_LOCAL_KEY);
       if (!stored) return;
 
       const parsed = JSON.parse(stored);
-
-      // ✅ same date check (optional but recommended)
       if (parsed.date !== selectedDate) return;
-
-      // ✅ sirf 8 PM ke baad local se load
       if (!isAfter8PM()) return;
 
       const transactions = Array.isArray(parsed.transactions)
@@ -261,43 +304,33 @@ const AttendanceDashboard = () => {
 
       if (transactions.length === 0) return;
 
-      // ✅ last transaction = final checkout
       const lastTransaction = transactions[transactions.length - 1];
-
       if (!lastTransaction?.LogoutTime) return;
 
       setCheckoutTime(lastTransaction.LogoutTime);
     } catch (e) {
       console.error('❌ Checkout set error', e);
     }
-  };
+  }, [selectedDate]);
+
+  useEffect(() => {
+    loadBreaksFromLocal();
+  }, [loadBreaksFromLocal]);
 
   const calculateTotalBreakMinutes = breaks => {
     if (!Array.isArray(breaks) || breaks.length === 0) return '0 min';
 
-    // Total seconds
     const totalSeconds = breaks.reduce((total, item) => {
       const [hh, mm, ss] = item.BreakDuration.split(':').map(Number);
       return total + hh * 3600 + mm * 60 + ss;
     }, 0);
 
-    // Convert to decimal minutes
     const decimalMinutes = totalSeconds / 60;
-
-    // Round to 2 decimal points
     return `${decimalMinutes.toFixed(2)} min`;
   };
 
-  const navigation = useNavigation();
-
   const attendanceData = {
-    totalWorkingHours: 42.5,
     weeklyTarget: 9,
-    breaksToday: 4,
-    totalBreakTime: 45,
-    checkInTime: '09:00 AM',
-    expectedCheckOut: '06:00 PM',
-    breaksAllowed: 4,
     currentStatus: 'working',
   };
 
@@ -346,11 +379,12 @@ const AttendanceDashboard = () => {
       100,
     100,
   );
+
   const formatTime = timeStr => {
     if (!timeStr) return '--:--';
 
     try {
-      const [hourStr, minuteStr, secondStr] = timeStr.split(':');
+      const [hourStr, minuteStr] = timeStr.split(':');
       const hour = parseInt(hourStr, 10);
       const minute = parseInt(minuteStr, 10);
 
@@ -438,7 +472,7 @@ const AttendanceDashboard = () => {
   };
 
   const formatRemainingLiveTime = () => {
-    const targetSeconds = 9 * 60 * 60; // 9 hours
+    const targetSeconds = 9 * 60 * 60;
     const workedSeconds = getWorkedTimeInSeconds();
 
     let remaining = targetSeconds - workedSeconds;
@@ -451,18 +485,16 @@ const AttendanceDashboard = () => {
     return `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
   };
 
-  // const isSunday = () => {
-  //   return true; // 🔥 always Sunday
-  // };
-
-  const isSunday = () => {
-    return new Date().getDay() === 0; // 0 = Sunday
+  // 🔥 Check karein ki kya Sunday hai YA API se koi leave/off/holiday mila hai
+  const isRestOrLeaveDay = () => {
+    const isSundayToday = new Date().getDay() === 0;
+    return isSundayToday || (todayStatus !== null && todayStatus !== undefined);
   };
 
   useEffect(() => {
-    if (!isSunday()) return;
+    if (!isRestOrLeaveDay()) return;
 
-    Animated.loop(
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(scaleAnim, {
           toValue: 1.1,
@@ -475,73 +507,68 @@ const AttendanceDashboard = () => {
           useNativeDriver: true,
         }),
       ]),
-    ).start();
-  }, []);
+    );
+    animation.start();
+
+    return () => animation.stop();
+  }, [scaleAnim, todayStatus]);
 
   return (
-    <View edges={['top']} style={styles.container}>
+    <View style={styles.container}>
       <StatusBar backgroundColor="#CE5926" barStyle="light-content" />
 
       <PremiumLoader visible={loading} message="Fetching Employees..." />
       <LinearGradient
-  colors={['#F97316', '#EA580C', '#C2410C']}
-  start={{x: 0, y: 0}}
-  end={{x: 1, y: 1}}
-  style={styles.headerGradient}>
+        colors={['#F97316', '#EA580C', '#C2410C']}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}
+        style={styles.headerGradient}>
+        <View style={styles.topRow}>
+          <TouchableOpacity
+            style={styles.menuBtn}
+            onPress={() => navigation.openDrawer()}>
+            <MaterialCommunityIcons name="menu" size={26} color="#fff" />
+          </TouchableOpacity>
 
-  {/* Top Row */}
-  <View style={styles.topRow}>
-    <TouchableOpacity
-      style={styles.menuBtn}
-      onPress={() => navigation.openDrawer()}>
-      <MaterialCommunityIcons name="menu" size={26} color="#fff" />
-    </TouchableOpacity>
+          <View style={styles.liveTime}>
+            <MaterialCommunityIcons
+              name="timer-outline"
+              size={28}
+              color="#4ADE80"
+            />
+            <Text style={styles.liveTimeText}>
+              {formatCurrentTime(currentTime)}
+            </Text>
+          </View>
+        </View>
 
-    <View style={styles.liveTime}>
-  <MaterialCommunityIcons
-    name="timer-outline"
-    size={28}
-    color="#4ADE80"
-  />
+        <View style={styles.userCard}>
+          <View style={styles.avatar}>
+            <Text style={{fontSize: 30}}>👋</Text>
+          </View>
 
-  <Text style={styles.liveTimeText}>
-    {formatCurrentTime(currentTime)}
-  </Text>
-</View>
-  </View>
+          <View style={{flex: 1}}>
+            <Text style={styles.greeting}>{greeting}</Text>
+            <TouchableOpacity onPress={fetchAttendanceData} activeOpacity={0.7}>
+              <Text style={styles.name}>{userData?.name}</Text>
+            </TouchableOpacity>
 
-  {/* User Card */}
-  <View style={styles.userCard}>
-    <View style={styles.avatar}>
-      <Text style={{fontSize: 30}}>👋</Text>
-    </View>
+            <View style={styles.dateRow}>
+              <MaterialCommunityIcons
+                name="calendar-month"
+                color="#FFD54F"
+                size={15}
+              />
+              <Text style={styles.date}>{formatDate(currentTime)}</Text>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
 
-    <View style={{flex: 1}}>
-      <Text style={styles.greeting}>{greeting}</Text>
-
-      <Text style={styles.name}>
-        {userData?.name}
-      </Text>
-
-      <View style={styles.dateRow}>
-        <MaterialCommunityIcons
-          name="calendar-month"
-          color="#FFD54F"
-          size={15}
-        />
-
-        <Text style={styles.date}>
-          {formatDate(currentTime)}
-        </Text>
-      </View>
-    </View>
-  </View>
-
-</LinearGradient>
       <ScrollView
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}>
-        {isSunday() ? (
+        {isRestOrLeaveDay() ? (
           <LinearGradient
             colors={['#0369A1', '#0891B2', '#06B6D4']}
             start={{x: 0, y: 0}}
@@ -561,7 +588,6 @@ const AttendanceDashboard = () => {
                 elevation: 10,
               },
             ]}>
-            {/* Animated Emoji */}
             <Animated.View
               style={{transform: [{scale: scaleAnim}], marginBottom: 16}}>
               <Text style={{fontSize: 80}}>🌊✨</Text>
@@ -576,7 +602,7 @@ const AttendanceDashboard = () => {
                 textAlign: 'center',
                 letterSpacing: 0.5,
               }}>
-              Sunday Recharge
+              {todayStatus ? `${todayStatus} Day` : 'Sunday Recharge'}
             </Text>
 
             <Text
@@ -618,7 +644,7 @@ const AttendanceDashboard = () => {
                   color: '#fff',
                   letterSpacing: 1,
                 }}>
-                REST DAY
+                REST / OFF DAY
               </Text>
             </View>
 
@@ -678,18 +704,17 @@ const AttendanceDashboard = () => {
                     color: '#fff',
                     marginTop: 4,
                   }}>
-                  Weekend
+                  Day Off
                 </Text>
               </View>
             </View>
           </LinearGradient>
         ) : (
           <>
-            {/* Working Hours Card */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View>
-                  <Text style={styles.cardTitle}>⏰ Today's Working Hours</Text>
+                  <Text style={styles.cardTitle}>⏰ Today&apos;s Working Hours</Text>
                   <Text style={styles.cardSubtitle}>
                     Track your daily progress
                   </Text>
@@ -749,10 +774,9 @@ const AttendanceDashboard = () => {
               </View>
             </View>
 
-            {/* Schedule */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>📅 Today's Schedule</Text>
+                <Text style={styles.cardTitle}>📅 Today&apos;s Schedule</Text>
               </View>
 
               <View style={styles.scheduleGrid}>
@@ -776,7 +800,6 @@ const AttendanceDashboard = () => {
               </View>
             </View>
 
-            {/* Break Summary */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>☕ Break Summary</Text>
@@ -810,7 +833,7 @@ const AttendanceDashboard = () => {
 
               {breakRecords?.breaks && breakRecords.breaks.length > 0 && (
                 <View style={styles.breaksList}>
-                  <Text style={styles.breaksListTitle}>Today's Breaks</Text>
+                  <Text style={styles.breaksListTitle}>Today&apos;s Breaks</Text>
                   {breakRecords.breaks.map((item, index) => (
                     <View key={index} style={styles.breakItem}>
                       <View style={styles.breakTimeInfo}>
@@ -830,7 +853,6 @@ const AttendanceDashboard = () => {
               )}
             </View>
 
-            {/* Stats */}
             <View style={styles.statsRow}>
               <LinearGradient
                 colors={['#CE5926', '#E67E50']}
@@ -851,7 +873,7 @@ const AttendanceDashboard = () => {
                 <Text style={styles.statCardValue}>
                   {attendanceRecords?.WorkingHours || '0'}
                 </Text>
-                <Text style={styles.statCardLabel}>Today's Hours</Text>
+                <Text style={styles.statCardLabel}>Today&apos;s Hours</Text>
               </LinearGradient>
             </View>
 
@@ -936,7 +958,7 @@ const AttendanceDashboard = () => {
 
             <FlatList
               data={breakRecords?.transactions || []}
-              keyExtractor={(item, index) => item.id.toString()}
+              keyExtractor={(item, index) => item.id?.toString() || index.toString()}
               renderItem={({item, index}) => (
                 <View style={styles.tableRow}>
                   <Text style={[styles.tableCell, styles.tableCellContent]}>
@@ -982,129 +1004,87 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f4f8',
   },
   headerGradient: {
-    paddingTop: 10,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 28, 
-    borderBottomRightRadius: 28,
- 
+    paddingTop: 18,
+    paddingHorizontal: 22,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 35,
+    borderBottomRightRadius: 35,
+    elevation: 12,
     shadowColor: '#C2410C',
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.3,
     shadowRadius: 15,
-    elevation: 8,
   },
-  topActionRow: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    marginBottom: 24,
+    marginBottom: 28,
   },
-  menuButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-    padding: 8,
-    borderRadius: 12,
+  menuBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,.18)',
   },
-  timeCapsule: {
+  liveTime: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', // ग्लास लुक
-    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     paddingHorizontal: 14,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: 30,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  clockIcon: {
-    marginRight: 6,
-  },
-  timeText: {
-    fontSize: 13,
+  liveTimeText: {
+    color: '#fff',
+    fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.5,
+    marginLeft: 8,
     fontVariant: ['tabular-nums'],
+    letterSpacing: 0.8,
   },
-  profileSection: {
-    flexDirection: 'row',
-    justifyContent: '',
-    alignItems: 'center',
-    width: '100%',
-  },
-
-  menuButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginTop: -40,
-  },
-
-  rightSection: {
+  userCard: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
-  avatarContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,.25)',
+    marginRight: 16,
   },
-
-  avatarText: {
-    fontSize: 26,
-  },
-
-  userClickableArea: {
-    alignItems: 'flex-end',
-  },
-
-  greetingText: {
+  greeting: {
+    color: 'rgba(255,255,255,.8)',
     fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 1.5,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 1,
   },
-
-  userNameText: {
-    fontSize: 21,
-    fontWeight: '800',
+  name: {
     color: '#fff',
-    marginTop: 2,
+    fontSize: 25,
+    fontWeight: '900',
+    marginTop: 3,
   },
-
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 4,
+    marginTop: 10,
   },
-
-  dateText: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-  },
-  timeBlock: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-  timeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    fontVariant: ['tabular-nums'],
+  date: {
+    color: 'rgba(255,255,255,.92)',
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: '500',
   },
   scrollContainer: {
     flex: 1,
@@ -1112,7 +1092,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
-
   card: {
     backgroundColor: '#fff',
     borderRadius: 24,
@@ -1272,6 +1251,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  totalTimeCardSmall: {
+    borderLeftColor: '#ef4444',
+    borderLeftWidth: 5,
+    backgroundColor: '#fff7f7',
+    paddingVertical: 18,
+    flex: 1.9,
+  },
   breaksList: {
     marginTop: 14,
   },
@@ -1327,12 +1313,11 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    paddingVertical: Platform.OS === 'ios' ? 0 : 20,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 20,
   },
   statCardIcon: {
     fontSize: 32,
     marginBottom: 10,
-    marginTop: Platform.OS === 'ios' ? 10 : 0,
   },
   statCardValue: {
     fontSize: 32,
@@ -1345,7 +1330,6 @@ const styles = StyleSheet.create({
     color: '#e2e8f0',
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: Platform.OS === 'ios' ? 10 : 0,
   },
   statusCard: {
     flexDirection: 'row',
@@ -1479,201 +1463,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 16,
   },
-  totalTimeCardSmall: {
-    borderLeftColor: '#ef4444',
-    borderLeftWidth: 5,
-    backgroundColor: '#fff7f7',
-    paddingVertical: 18, // thoda sa hi bada
-    flex: 1.9, // default shayad 1 hoga, isko thoda zyada de do
-  },
-  infoContainer: {
-    marginTop: 12,
-  },
-
-  infoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-
-  infoText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-
-  timeChip: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-
-  timeText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-    marginHorizontal: 8,
-    letterSpacing: 1,
-  },
-
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#22C55E',
-    marginRight: 5,
-  },
-
-  liveText: {
-    color: '#22C55E',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  headerGradient: {
-  paddingTop: 18,
-  paddingHorizontal: 22,
-  paddingBottom: 30,
-
-  borderBottomLeftRadius: 35,
-  borderBottomRightRadius: 35,
-
-  elevation: 12,
-},
-
-topRow:{
-  flexDirection:'row',
-  justifyContent:'space-between',
-  alignItems:'center',
-  marginBottom:28,
-},
-
-menuBtn:{
-  width:46,
-  height:46,
-  borderRadius:23,
-  justifyContent:'center',
-  alignItems:'center',
-
-  backgroundColor:'rgba(255,255,255,.18)',
-},
-
-headerGradient: {
-  paddingTop: 18,
-  paddingHorizontal: 22,
-  paddingBottom: 30,
-
-  borderBottomLeftRadius: 35,
-  borderBottomRightRadius: 35,
-
-  elevation: 12,
-},
-
-topRow:{
-  flexDirection:'row',
-  justifyContent:'space-between',
-  alignItems:'center',
-  marginBottom:28,
-},
-
-menuBtn:{
-  width:46,
-  height:46,
-  borderRadius:23,
-  justifyContent:'center',
-  alignItems:'center',
-
-  backgroundColor:'rgba(255,255,255,.18)',
-},
-
-liveTime: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: 'rgba(255,255,255,0.18)',
-  paddingHorizontal: 14,
-  paddingVertical: 8,
-  borderRadius: 30,
-  borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.25)',
-},
-
-liveTimeText: {
-  color: '#fff',
-  fontSize: 15,
-  fontWeight: '700',
-  marginLeft: 8,
-  fontVariant: ['tabular-nums'],
-  letterSpacing: 0.8,
-},
-
-liveDot:{
-  width:9,
-  height:9,
-  borderRadius:5,
-  backgroundColor:'#00FF7F',
-},
-
-userCard:{
-  flexDirection:'row',
-  alignItems:'center',
-},
-
-avatar:{
-  width:68,
-  height:68,
-  borderRadius:34,
-
-  justifyContent:'center',
-  alignItems:'center',
-
-  backgroundColor:'rgba(255,255,255,.15)',
-
-  borderWidth:2,
-  borderColor:'rgba(255,255,255,.25)',
-
-  marginRight:16,
-},
-
-greeting:{
-  color:'rgba(255,255,255,.8)',
-  fontSize:12,
-  letterSpacing:1.5,
-  fontWeight:'700',
-  textTransform:'uppercase',
-},
-
-name:{
-  color:'#fff',
-  fontSize:25,
-  fontWeight:'900',
-  marginTop:3,
-},
-
-dateRow:{
-  flexDirection:'row',
-  alignItems:'center',
-  marginTop:10,
-},
-
-date:{
-  color:'rgba(255,255,255,.92)',
-  marginLeft:6,
-  fontSize:13,
-  fontWeight:'500',
-},
 });
 
 export default AttendanceDashboard;

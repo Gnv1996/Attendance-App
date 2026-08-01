@@ -9,7 +9,6 @@ import {
   StatusBar,
   Animated,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import moment from 'moment';
@@ -43,37 +42,18 @@ const AttendanceScreen = ({navigation}) => {
   const [selectedMonth, setSelectedMonth] = useState(moment());
   const [attendanceData, setAttendanceData] = useState({});
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [userData, setUserData] = useState(null);
   const [leaveSummary, setLeaveSummary] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userDataString = await AsyncStorage.getItem('userData');
-        const userData = userDataString ? JSON.parse(userDataString) : null;
-        setUserData(userData);
-      } catch (error) {
-        console.log('❌ Error fetching user data:', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   const fetchAttendanceRecord = async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('userToken');
+      const userDataString = await AsyncStorage.getItem('userData');
+      const userData = userDataString ? JSON.parse(userDataString) : null;
 
       if (!token) return;
 
-      const formData = new FormData();
-      // formData.append('ID', userData.id);
-      // formData.append('LoginName', userData.name);
-      // formData.append('CrmEmpID', userData.crm_id);
-      // formData.append('Month', selectedMonth.month() + 1);
-      // formData.append('Year', selectedMonth.year());
       const payload = {
         CrmEmpID: userData.crm_id, // 525 jaise value
         Year: selectedMonth.year(), // 2025
@@ -92,7 +72,7 @@ const AttendanceScreen = ({navigation}) => {
         },
       );
 
-      console.warn(payload, 'See the payload');
+      // console.warn(payload, 'See the payload');
 
       if (response.status === 401) return;
 
@@ -175,9 +155,8 @@ const AttendanceScreen = ({navigation}) => {
     }
   };
   useEffect(() => {
-    if (!userData) return;
     fetchAttendanceRecord();
-  }, [userData, selectedMonth]);
+  }, [selectedMonth]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -391,49 +370,56 @@ const AttendanceScreen = ({navigation}) => {
     <View style={{flex: 1, backgroundColor: '#f0f4f8'}}>
       <StatusBar backgroundColor="#EA580C" barStyle="light-content" />
       <PremiumLoader visible={loading} message="Fetching Employees..." />
-    {/* === ATTRACTIVE HEADER === */}
-{/* === ATTRACTIVE HEADER === */}
-<LinearGradient
-  colors={['#F97316', '#EA580C', '#C2410C']}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 0 }}
-  style={styles.headerGradient}>
+      {/* === ATTRACTIVE HEADER === */}
+      {/* === ATTRACTIVE HEADER === */}
+      <LinearGradient
+        colors={['#F97316', '#EA580C', '#C2410C']}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 0}}
+        style={styles.headerGradient}>
+        {/* Top Navigation Bar */}
+        <View style={styles.headerTop}>
+          <TouchableOpacity
+            onPress={() => navigation.openDrawer()}
+            style={styles.menuButton}>
+            <MaterialCommunityIcons name="menu" size={28} color="#fff" />
+          </TouchableOpacity>
 
-  {/* Top Navigation Bar */}
-  <View style={styles.headerTop}>
-  <TouchableOpacity
-    onPress={() => navigation.openDrawer()}
-    style={styles.menuButton}>
-    <MaterialCommunityIcons name="menu" size={28} color="#fff" />
-  </TouchableOpacity>
+          <View style={styles.monthContainer}>
+            <View style={styles.monthRow}>
+              <TouchableOpacity
+                onPress={goPrevMonth}
+                style={styles.arrowButton}>
+                <MaterialCommunityIcons
+                  name="chevron-left"
+                  size={26}
+                  color="#fff"
+                />
+              </TouchableOpacity>
 
-  <View style={styles.monthContainer}>
-    <View style={styles.monthRow}>
-      <TouchableOpacity onPress={goPrevMonth} style={styles.arrowButton}>
-        <MaterialCommunityIcons name="chevron-left" size={26} color="#fff" />
-      </TouchableOpacity>
+              <Text style={styles.monthTitle}>
+                {selectedMonth.format('MMMM YYYY')}
+              </Text>
 
-      <Text style={styles.monthTitle}>
-        {selectedMonth.format('MMMM YYYY')}
-      </Text>
+              <TouchableOpacity
+                onPress={goNextMonth}
+                style={styles.arrowButton}>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={26}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={fetchAttendanceRecord}>
+              <Text style={styles.subtitle}>Attendance Overview</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <TouchableOpacity onPress={goNextMonth} style={styles.arrowButton}>
-        <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
-      </TouchableOpacity>
-    </View>
-
-    <Text style={styles.subtitle}>Attendance Overview</Text>
-  </View>
-</View>
-
-  {/* Leave Summary */}
-  <LeaveSummaryHeader leaves={leaveSummary} />
-
-</LinearGradient>
-    
-
-
- 
+        {/* Leave Summary */}
+        <LeaveSummaryHeader leaves={leaveSummary} />
+      </LinearGradient>
 
       <ScrollView contentContainerStyle={{paddingBottom: 40}}>
         {getDaysInMonth().map(day => {
@@ -710,7 +696,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 12,
@@ -721,20 +707,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 18,
   },
-  
+
   menuButton: {
     padding: 8,
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.15)',
-    marginTop:-40
+    marginTop: -40,
   },
-  
+
   monthContainer: {
     flex: 1,
-    alignItems: 'flex-end',   // Right end
+    alignItems: 'flex-end', // Right end
     // marginLeft: 16,            // Menu se gap
   },
-  
+
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -746,7 +732,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 2 },
+    textShadowOffset: {width: 0, height: 2},
     textShadowRadius: 3,
   },
 
@@ -755,7 +741,7 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     fontWeight: '500',
     marginTop: 4,
-    marginRight:30
+    marginRight: 30,
   },
 
   arrowButton: {
